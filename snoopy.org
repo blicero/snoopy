@@ -1,0 +1,59 @@
+# -*- mode: org; fill-column: 78; -*-
+# Time-stamp: <2024-12-22 15:57:26 krylon>
+#
+#+TAGS: internals(i) ui(u) bug(b) feature(f)
+#+TAGS: database(d) design(e), meditation(m)
+#+TAGS: optimize(o) refactor(r) cleanup(c)
+#+TAGS: web(w)
+#+TODO: TODO(t)  RESEARCH(r) IMPLEMENT(i) TEST(e) | DONE(d) FAILED(f) CANCELLED(c)
+#+TODO: MEDITATE(m) PLANNING(p) | SUSPENDED(s)
+#+PRIORITIES: A G D
+
+* Snoopy [0/0]
+  :PROPERTIES:
+  :COOKIE_DATA: todo recursive
+  :VISIBILITY: children
+  :END:
+  Snoopy is a naive desktop search engine for your files. It aims to be gentle
+  on resource usage, index both file names, types, and metadata/content where
+  feasible.
+** Clocktable
+   #+BEGIN: clocktable :scope file :maxlevel 202 :emphasize t
+   #+CAPTION: Clock summary at [2024-12-22 So 15:46]
+   | Headline     | Time   |
+   |--------------+--------|
+   | *Total time* | *0:00* |
+   #+END:
+** Features [0/0]
+   :PROPERTIES:
+   :COOKIE_DATA: todo recursive
+   :VISIBILITY: children
+   :END:
+** Components [0/0]
+   :PROPERTIES:
+   :COOKIE_DATA: todo recursive
+   :VISIBILITY: children
+   :END:
+*** Database [0/0]
+   :PROPERTIES:
+   :COOKIE_DATA: todo recursive
+   :VISIBILITY: children
+   :END:
+   I'm gonna use SQLite, it's just too obvious a choice.
+*** Walker [0/0]
+   :PROPERTIES:
+   :COOKIE_DATA: todo recursive
+   :VISIBILITY: children
+   :END:
+*** Extractor [0/0]
+   :PROPERTIES:
+   :COOKIE_DATA: todo recursive
+   :VISIBILITY: children
+   :END:
+   The extractor attempts to get as much usable metadata and/or file content
+   to index as possible.
+** Bugs [0/0]
+   :PROPERTIES:
+   :COOKIE_DATA: todo recursive
+   :VISIBILITY: children
+   :END:
