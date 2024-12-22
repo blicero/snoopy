@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 22. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2024-12-22 16:32:12 krylon>
+// Time-stamp: <2024-12-22 17:55:09 krylon>
 
 // Package blacklist provides a filter meant to exclude files from scanning.
 package blacklist
@@ -54,3 +54,7 @@ func (i *GlobItem) Match(path string) bool {
 func (i *GlobItem) HitCount() int64 {
 	return i.Count
 } // func (i *GlobItem) HitCount() int64
+
+type Blacklist struct {
+	Patterns []Item
+}
