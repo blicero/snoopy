@@ -1,0 +1,20 @@
+# Time-stamp: <2024-12-22 15:16:20 krylon>
+*~
+*#
+.*
+*_string.go
+*_gen.go
+*ffjson.go
+*templates.go
+build
+build_templates
+*.log
+*TAGS*
+bak.*
+*.bak
+snoopy
+
+*.sync-conflict-*
+
+*.exe
+
