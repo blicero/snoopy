@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2024-12-23 19:56:53 krylon>
+# Time-stamp: <2024-12-23 21:42:50 krylon>
 #
 #+TAGS: internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -19,15 +19,17 @@
   feasible.
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 202 :emphasize t
-   #+CAPTION: Clock summary at [2024-12-23 Mo 19:56]
+   #+CAPTION: Clock summary at [2024-12-23 Mo 21:42]
    | Headline               | Time   |        |      |
    |------------------------+--------+--------+------|
-   | *Total time*           | *2:08* |        |      |
+   | *Total time*           | *3:44* |        |      |
    |------------------------+--------+--------+------|
-   | *Snoopy [0/0]*         | *2:08* |        |      |
-   | \_  /Components [0/0]/ |        | /2:08/ |      |
+   | *Snoopy [0/0]*         | *3:44* |        |      |
+   | \_  /Components [0/0]/ |        | /3:44/ |      |
    | \_    Data model [0/0] |        |        | 0:37 |
+   | \_    Database [0/0]   |        |        | 1:11 |
    | \_    Blacklist [0/0]  |        |        | 1:31 |
+   | \_    Walker [0/0]     |        |        | 0:25 |
    #+END:
 ** Features [0/0]
    :PROPERTIES:
@@ -52,6 +54,9 @@
     :COOKIE_DATA: todo recursive
     :VISIBILITY: children
     :END:
+    :LOGBOOK:
+    CLOCK: [2024-12-23 Mo 20:31]--[2024-12-23 Mo 21:42] =>  1:11
+    :END:
     I'm gonna use SQLite, it's just too obvious a choice.
 *** Blacklist [0/0]
     :PROPERTIES:
@@ -66,6 +71,9 @@
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
     :VISIBILITY: children
+    :END:
+    :LOGBOOK:
+    CLOCK: [2024-12-23 Mo 20:05]--[2024-12-23 Mo 20:30] =>  0:25
     :END:
 *** Extractor [0/0]
     :PROPERTIES:
