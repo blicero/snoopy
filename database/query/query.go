@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2024-12-23 20:49:42 krylon>
+// Time-stamp: <2024-12-23 23:37:44 krylon>
 
 //go:generate stringer -type=ID
 
@@ -17,6 +17,16 @@ const (
 	RootAdd ID = iota
 	RootGetByPath
 	RootGetByID
+	RootGetAll
 	RootDelete
 	RootMarkScan
+	FileAdd
+	FileDelete
+	FileUpdateCtime
+	FileGetByID
+	FileGetByPath
+	FileGetByPattern
+	FileGetAll
+	BlacklistAdd
+	BlacklistHit
 )
