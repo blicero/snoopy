@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2024-12-23 21:42:50 krylon>
+# Time-stamp: <2024-12-25 18:09:37 krylon>
 #
 #+TAGS: internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -19,15 +19,15 @@
   feasible.
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 202 :emphasize t
-   #+CAPTION: Clock summary at [2024-12-23 Mo 21:42]
+   #+CAPTION: Clock summary at [2024-12-25 Mi 18:09]
    | Headline               | Time   |        |      |
    |------------------------+--------+--------+------|
-   | *Total time*           | *3:44* |        |      |
+   | *Total time*           | *4:27* |        |      |
    |------------------------+--------+--------+------|
-   | *Snoopy [0/0]*         | *3:44* |        |      |
-   | \_  /Components [0/0]/ |        | /3:44/ |      |
+   | *Snoopy [0/0]*         | *4:27* |        |      |
+   | \_  /Components [0/0]/ |        | /4:27/ |      |
    | \_    Data model [0/0] |        |        | 0:37 |
-   | \_    Database [0/0]   |        |        | 1:11 |
+   | \_    Database [0/0]   |        |        | 1:54 |
    | \_    Blacklist [0/0]  |        |        | 1:31 |
    | \_    Walker [0/0]     |        |        | 0:25 |
    #+END:
@@ -55,6 +55,7 @@
     :VISIBILITY: children
     :END:
     :LOGBOOK:
+    CLOCK: [2024-12-25 Mi 17:26]--[2024-12-25 Mi 18:09] =>  0:43
     CLOCK: [2024-12-23 Mo 20:31]--[2024-12-23 Mo 21:42] =>  1:11
     :END:
     I'm gonna use SQLite, it's just too obvious a choice.
