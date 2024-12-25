@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2024-12-23 21:38:41 krylon>
+// Time-stamp: <2024-12-25 18:08:33 krylon>
 
 package database
 
@@ -11,7 +11,7 @@ var initQueries = []string{
 CREATE TABLE root (
     id INTEGER PRIMARY KEY,
     path TEXT UNIQUE NOT NULL,
-    last_scan INTEGER NOT NULL DEFAULT 0,
+    last_scan INTEGER NOT NULL DEFAULT 0
 ) STRICT
 `,
 	"CREATE INDEX root_scan_idx ON root (last_scan)",

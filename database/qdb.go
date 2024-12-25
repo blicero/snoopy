@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2024-12-24 00:02:49 krylon>
+// Time-stamp: <2024-12-25 17:34:36 krylon>
 
 package database
 
@@ -22,4 +22,59 @@ RETURNING id
 `,
 	query.FileDelete:      "DELETE FROM file WHERE id = ?",
 	query.FileUpdateCtime: "UPDATE file SET ctime = ? WHERE id = ?",
+	query.FileGetByPath: `
+SELECT
+    id,
+    root_id,
+    mime_type,
+    ctime
+FROM file
+WHERE path = ?
+`,
+	query.FileGetByID: `
+SELECT
+    root_id,
+    path,
+    mime_type,
+    ctime
+FROM file
+WHERE id = ?
+`,
+	query.FileGetByPattern: `
+SELECT
+    id,
+    root_id,
+    path,
+    mime_type,
+    ctime
+FROM file
+WHERE path LIKE ?
+`,
+	query.FileGetByRoot: `
+SELECT
+    id,
+    path,
+    mime_type,
+    ctime
+FROM file
+WHERE root_id = ?
+`,
+	query.FileGetAll: `
+SELECT
+    id,
+    root_id,
+    path,
+    mime_type,
+    ctime
+FROM file
+`,
+	query.BlacklistAdd: `
+INSERT INTO blacklist (pattern, is_glob)
+VALUES                (      ?,       ?)
+`,
+	query.BlacklistHit: `
+UPDATE blacklist
+SET hit_cnt = hit_cnt + 1
+WHERE id = ?
+`,
 }

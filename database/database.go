@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2024-12-23 20:35:21 krylon>
+// Time-stamp: <2024-12-25 17:55:59 krylon>
 
 // Package database provides the persistence layer for the application.
 package database
@@ -21,6 +21,7 @@ import (
 	"github.com/blicero/snoopy/common"
 	"github.com/blicero/snoopy/database/query"
 	"github.com/blicero/snoopy/logdomain"
+	_ "github.com/mattn/go-sqlite3" // Import the database driver
 )
 
 var (
