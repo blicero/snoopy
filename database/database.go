@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2024-12-25 17:55:59 krylon>
+// Time-stamp: <2024-12-26 17:51:13 krylon>
 
 // Package database provides the persistence layer for the application.
 package database
@@ -21,6 +21,7 @@ import (
 	"github.com/blicero/snoopy/common"
 	"github.com/blicero/snoopy/database/query"
 	"github.com/blicero/snoopy/logdomain"
+	"github.com/blicero/snoopy/model"
 	_ "github.com/mattn/go-sqlite3" // Import the database driver
 )
 
@@ -545,3 +546,199 @@ func (db *Database) Commit() error {
 	db.tx = nil
 	return nil
 } // func (db *Database) Commit() error
+
+// RootAdd adds a Root folder to the database
+func (db *Database) RootAdd(r *model.Root) error {
+	const qid query.ID = query.RootAdd
+	var (
+		err    error
+		msg    string
+		stmt   *sql.Stmt
+		tx     *sql.Tx
+		status bool
+	)
+
+	if stmt, err = db.getQuery(qid); err != nil {
+		db.log.Printf("[ERROR] Cannot prepare query %s: %s\n",
+			qid,
+			err.Error())
+		return err
+	} else if db.tx != nil {
+		tx = db.tx
+	} else {
+		// db.log.Printf("[INFO] Start ad-hoc transaction for adding Feed %s\n",
+		// 	f.Title)
+	BEGIN_AD_HOC:
+		if tx, err = db.db.Begin(); err != nil {
+			if worthARetry(err) {
+				waitForRetry()
+				goto BEGIN_AD_HOC
+			} else {
+				msg = fmt.Sprintf("Error starting transaction: %s\n",
+					err.Error())
+				db.log.Printf("[ERROR] %s\n", msg)
+				return errors.New(msg)
+			}
+
+		} else {
+			defer func() {
+				var err2 error
+				if status {
+					if err2 = tx.Commit(); err2 != nil {
+						db.log.Printf("[ERROR] Failed to commit ad-hoc transaction: %s\n",
+							err2.Error())
+					}
+				} else if err2 = tx.Rollback(); err2 != nil {
+					db.log.Printf("[ERROR] Rollback of ad-hoc transaction failed: %s\n",
+						err2.Error())
+				}
+			}()
+		}
+	}
+
+	stmt = tx.Stmt(stmt)
+	var rows *sql.Rows
+
+EXEC_QUERY:
+	if rows, err = stmt.Query(r.Path); err != nil {
+		if worthARetry(err) {
+			waitForRetry()
+			goto EXEC_QUERY
+		} else {
+			err = fmt.Errorf("Cannot add root %s to database: %s",
+				r.Path,
+				err.Error())
+			db.log.Printf("[ERROR] %s\n", err.Error())
+			return err
+		}
+	} else {
+		var id int64
+
+		defer rows.Close()
+
+		if !rows.Next() {
+			// CANTHAPPEN
+			db.log.Printf("[ERROR] Query %s did not return a value\n",
+				qid)
+			return fmt.Errorf("Query %s did not return a value", qid)
+		} else if err = rows.Scan(&id); err != nil {
+			msg = fmt.Sprintf("Failed to get ID for newly added root %s: %s",
+				r.Path,
+				err.Error())
+			db.log.Printf("[ERROR] %s\n", msg)
+			return errors.New(msg)
+		}
+
+		r.ID = id
+		status = true
+		return nil
+	}
+} // func (db *Database) RootAdd(r *model.Root) error
+
+func (db *Database) RootGetByPath(path string) (*model.Root, error) {
+	const qid query.ID = query.RootGetByPath
+	var (
+		err  error
+		msg  string
+		stmt *sql.Stmt
+	)
+
+	if stmt, err = db.getQuery(qid); err != nil {
+		db.log.Printf("[ERROR] Cannot prepare query %s: %s\n",
+			qid,
+			err.Error())
+		return nil, err
+	} else if db.tx != nil {
+		stmt = db.tx.Stmt(stmt)
+	}
+
+	var rows *sql.Rows
+
+EXEC_QUERY:
+	if rows, err = stmt.Query(path); err != nil {
+		if worthARetry(err) {
+			waitForRetry()
+			goto EXEC_QUERY
+		}
+
+		return nil, err
+	}
+
+	defer rows.Close() // nolint: errcheck,gosec
+
+	if rows.Next() {
+		var (
+			timestamp int64
+			r         = &model.Root{Path: path}
+		)
+
+		if err = rows.Scan(&r.ID, &timestamp); err != nil {
+			msg = fmt.Sprintf("Error scanning row for Root %s: %s",
+				path,
+				err.Error())
+			db.log.Printf("[ERROR] %s\n", msg)
+			return nil, errors.New(msg)
+		}
+
+		r.LastScan = time.Unix(timestamp, 0)
+
+		return r, nil
+	}
+
+	db.log.Printf("[INFO] Root %s was not found in database\n", path)
+	return nil, nil
+} // func (db *Database) RootGetByPath(path string) (*model.Root, error)
+
+func (db *Database) RootGetByID(id int64) (*model.Root, error) {
+	const qid query.ID = query.RootGetByID
+	var (
+		err  error
+		msg  string
+		stmt *sql.Stmt
+	)
+
+	if stmt, err = db.getQuery(qid); err != nil {
+		db.log.Printf("[ERROR] Cannot prepare query %s: %s\n",
+			qid,
+			err.Error())
+		return nil, err
+	} else if db.tx != nil {
+		stmt = db.tx.Stmt(stmt)
+	}
+
+	var rows *sql.Rows
+
+EXEC_QUERY:
+	if rows, err = stmt.Query(id); err != nil {
+		if worthARetry(err) {
+			waitForRetry()
+			goto EXEC_QUERY
+		}
+
+		return nil, err
+	}
+
+	defer rows.Close() // nolint: errcheck,gosec
+
+	if rows.Next() {
+		var (
+			timestamp int64
+			r         = &model.Root{ID: id}
+		)
+
+		if err = rows.Scan(&r.Path, &timestamp); err != nil {
+			msg = fmt.Sprintf("Error scanning row for Root %d: %s",
+				id,
+				err.Error())
+			db.log.Printf("[ERROR] %s\n", msg)
+			return nil, errors.New(msg)
+		}
+
+		r.LastScan = time.Unix(timestamp, 0)
+
+		return r, nil
+	}
+
+	db.log.Printf("[INFO] Root %d was not found in database\n", id)
+	return nil, nil
+} // func (db *Database) RootGetByID(id int64) (*model.Root, error)
