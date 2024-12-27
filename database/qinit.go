@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2024-12-25 18:08:33 krylon>
+// Time-stamp: <2024-12-27 17:11:38 krylon>
 
 package database
 
@@ -23,7 +23,9 @@ CREATE TABLE file (
     path TEXT NOT NULL,
     mime_type TEXT NOT NULL,
     ctime INTEGER NOT NULL DEFAULT 0,
-    FOREIGN KEY (root_id) REFERENCES root (id),
+    FOREIGN KEY (root_id) REFERENCES root (id)
+        ON UPDATE RESTRICT
+        ON DELETE CASCADE,
     UNIQUE (root_id, path)
 ) STRICT
 `,
