@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 22. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2024-12-23 19:35:32 krylon>
+// Time-stamp: <2024-12-27 19:19:10 krylon>
 
 // Package blacklist provides a filter meant to exclude files from scanning.
 package blacklist
@@ -10,6 +10,7 @@ package blacklist
 import (
 	"regexp"
 	"sort"
+	"sync"
 
 	"github.com/gobwas/glob"
 )
@@ -90,6 +91,7 @@ func (i *GlobItem) HitCount() int64 {
 
 // Blacklist wraps a number of Items.
 type Blacklist struct {
+	lock     sync.RWMutex
 	Patterns []Item
 }
 
@@ -99,9 +101,6 @@ func NewBlacklist(patterns ...Item) *Blacklist {
 		Patterns: make([]Item, len(patterns)),
 	}
 
-	// for idx, item := range patterns {
-	// 	b.Patterns[idx] = item
-	// }
 	copy(b.Patterns, patterns)
 
 	return b
@@ -114,9 +113,13 @@ func (b *Blacklist) Less(i, j int) bool { return b.Patterns[i].HitCount() > b.Pa
 // Match tries to match the given path against all patterns in the Blacklist,
 // until either one matches or the list is exhausted.
 func (b *Blacklist) Match(path string) bool {
+	b.lock.RLock()
 	for _, i := range b.Patterns {
 		if i.Match(path) {
+			b.lock.RUnlock()
+			b.lock.Lock()
 			sort.Sort(b)
+			b.lock.Unlock()
 			return true
 		}
 	}
