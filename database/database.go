@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2024-12-27 17:28:11 krylon>
+// Time-stamp: <2024-12-28 18:01:36 krylon>
 
 // Package database provides the persistence layer for the application.
 package database
@@ -1216,7 +1216,7 @@ EXEC_QUERY:
 		return f, nil
 	}
 
-	db.log.Printf("[INFO] File %s was not found in database\n", path)
+	db.log.Printf("[DEBUG] File %s was not found in database\n", path)
 	return nil, nil
 } // func (db *Database) FileGetByPath(path string) (*model.File, error)
 
