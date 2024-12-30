@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 28. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2024-12-28 18:04:49 krylon>
+// Time-stamp: <2024-12-30 05:48:54 krylon>
 
 package walker
 
@@ -26,6 +26,7 @@ const (
 var (
 	testRoot string
 	w        *Walker
+	fileCnt  int
 )
 
 func TestMain(m *testing.M) {
@@ -106,6 +107,8 @@ func populateTestRoot(path string, depth int) error {
 		} else if err = fh.Close(); err != nil {
 			return err
 		}
+
+		fileCnt++
 	}
 
 	if depth < 1 {

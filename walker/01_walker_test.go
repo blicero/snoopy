@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 28. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2024-12-28 17:49:51 krylon>
+// Time-stamp: <2024-12-30 17:46:48 krylon>
 
 package walker
 
@@ -36,5 +36,16 @@ func TestWalkDirectory(t *testing.T) {
 		t.Fatalf("Failed to traverse root directory %s: %s",
 			testRoot,
 			err.Error())
+	}
+
+	var files []*model.File
+
+	if files, err = w.db.FileGetAll(); err != nil {
+		t.Fatalf("Failed to load all Files from Database: %s",
+			err.Error())
+	} else if len(files) != fileCnt {
+		t.Errorf("Unexpected number of files in Database: %d (expected %d)",
+			len(files),
+			fileCnt)
 	}
 } // func TestWalkDirectory(t *testing.T)
