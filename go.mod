@@ -6,7 +6,9 @@ require (
 	github.com/blicero/krylib v0.2.1
 	github.com/gabriel-vasile/mimetype v1.4.7
 	github.com/gobwas/glob v0.2.3
+	github.com/godbus/dbus v4.1.0+incompatible
 	github.com/google/uuid v1.6.0
+	github.com/gotk3/gotk3 v0.6.4
 	github.com/hashicorp/logutils v1.0.0
 	github.com/mattn/go-sqlite3 v1.14.24
 )

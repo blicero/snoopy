@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 18. 09. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2024-12-23 20:25:28 krylon>
+// Time-stamp: <2024-12-31 18:03:44 krylon>
 
 package logdomain
 
@@ -14,6 +14,7 @@ const (
 	Database ID = iota
 	DBPool
 	Walker
+	GUI
 )
 
 func AllDomains() []ID {
@@ -21,5 +22,6 @@ func AllDomains() []ID {
 		Database,
 		DBPool,
 		Walker,
+		GUI,
 	}
 } // func AllDomains() []ID
