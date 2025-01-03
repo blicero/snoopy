@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 30. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2024-12-31 18:35:28 krylon>
+// Time-stamp: <2025-01-03 22:25:01 krylon>
 
 package ui
 
@@ -18,6 +18,7 @@ import (
 	"github.com/blicero/snoopy/common"
 	"github.com/blicero/snoopy/database"
 	"github.com/blicero/snoopy/logdomain"
+	"github.com/blicero/snoopy/model"
 	"github.com/blicero/snoopy/walker"
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
@@ -26,10 +27,10 @@ import (
 type column struct {
 	colType glib.Type
 	title   string
-	display bool
 	edit    bool
 }
 
+// nolint: unused,deadcode
 var cols = []column{
 	{
 		colType: glib.TYPE_INT,
@@ -38,7 +39,6 @@ var cols = []column{
 	{
 		colType: glib.TYPE_STRING,
 		title:   "Root Path",
-		display: true,
 	},
 	{
 		colType: glib.TYPE_INT,
@@ -47,18 +47,15 @@ var cols = []column{
 	{
 		colType: glib.TYPE_STRING,
 		title:   "Path",
-		display: true,
 	},
 	{
 		colType: glib.TYPE_STRING,
 		title:   "Type",
 		edit:    true,
-		display: true,
 	},
 	{
 		colType: glib.TYPE_STRING,
 		title:   "Size",
-		display: true,
 	},
 }
 
@@ -97,14 +94,14 @@ type tabContent struct {
 type SWin struct {
 	pool      *database.Pool
 	scanner   *walker.Walker
-	ticker    *time.Ticker
-	lock      sync.RWMutex
+	lock      sync.RWMutex // nolint: unused,deadcode,structcheck
 	log       *log.Logger
 	win       *gtk.Window
 	mainBox   *gtk.Box
 	menu      *gtk.MenuBar
 	notebook  *gtk.Notebook
 	statusbar *gtk.Statusbar
+	tabs      []tabContent
 }
 
 // Create creates a new UI instance and returns it.
@@ -127,6 +124,7 @@ func Create() (*SWin, error) {
 	}
 
 	if display := os.Getenv("DISPLAY"); display == "" {
+		g.log.Println("[WARNING] Environment variable DISPLAY is not set. Trying :0.0")
 		os.Setenv("DISPLAY", ":0.0")
 	}
 
@@ -154,10 +152,91 @@ func Create() (*SWin, error) {
 		return nil, err
 	}
 
+	g.tabs = make([]tabContent, len(viewList))
+	for tIdx, v := range viewList {
+		var (
+			tab         tabContent
+			lbl         *gtk.Label
+			editHandler cellEditHandlerFactory
+		)
+
+		if tab.store, tab.filter, tab.view, err = v.create(editHandler); err != nil {
+			g.log.Printf("[ERROR] Cannot create TreeView %q: %s\n",
+				v.title,
+				err.Error())
+			return nil, err
+		} else if tab.scr, err = gtk.ScrolledWindowNew(nil, nil); err != nil {
+			g.log.Printf("[ERROR] Cannot create ScrolledWindow for %q: %s\n",
+				v.title,
+				err.Error())
+			return nil, err
+		} else if lbl, err = gtk.LabelNew(v.title); err != nil {
+			g.log.Printf("[ERROR] Cannot create title Label for %q: %s\n",
+				v.title,
+				err.Error())
+			return nil, err
+		} else if tab.vbox, err = gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 1); err != nil {
+			g.log.Printf("[ERROR] Cannot create vbox for %q: %s\n",
+				v.title,
+				err.Error())
+			return nil, err
+		} else if tab.sbox, err = gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 1); err != nil {
+			g.log.Printf("[ERROR] Cannot create sbox for %q: %s\n",
+				v.title,
+				err.Error())
+			return nil, err
+		} else if tab.lbl, err = gtk.LabelNew("Filter:"); err != nil {
+			g.log.Printf("[ERROR] Cannot create Filter Label for %s: %s\n",
+				v.title,
+				err.Error())
+			return nil, err
+		} else if tab.search, err = gtk.EntryNew(); err != nil {
+			g.log.Printf("[ERROR] Cannot create search entry for %s: %s\n",
+				v.title,
+				err.Error())
+			return nil, err
+		}
+
+		tab.sbox.PackStart(tab.lbl, false, false, 1)
+		tab.sbox.PackStart(tab.search, true, true, 1)
+		tab.vbox.PackStart(tab.sbox, false, false, 1)
+		tab.vbox.PackStart(tab.scr, true, true, 1)
+
+		switch tabIdx(tIdx) {
+		default:
+			tab.filter.SetVisibleFunc(dummyFilter)
+		}
+
+		g.tabs[tIdx] = tab
+		tab.scr.Add(tab.view)
+		g.notebook.AppendPage(tab.vbox, lbl)
+	}
+
+	if err = g.initMenu(); err != nil {
+		return nil, err
+	}
+
 	// ...
+
+	g.win.Connect("destroy", gtk.MainQuit)
+
+	g.win.Add(g.mainBox)
+	g.mainBox.PackStart(g.menu, false, false, 0)
+	g.mainBox.PackStart(g.notebook, true, true, 0)
+	g.mainBox.PackStart(g.statusbar, false, false, 0)
+	g.win.SetSizeRequest(960, 540)
+	g.win.SetTitle(fmt.Sprintf("%s %s (built on %s)",
+		common.AppName,
+		common.Version,
+		common.BuildStamp.Format(common.TimestampFormat)))
+	g.win.ShowAll()
 
 	return g, nil
 } // func Create() (*SWin, error)
+
+func dummyFilter(model *gtk.TreeModel, iter *gtk.TreeIter) bool {
+	return true
+} // func dummyFilter(model *gtk.TreeModel, iter *gtk.TreeIter) bool
 
 // Run executes gtk's main event loop.
 func (g *SWin) Run() {
@@ -223,11 +302,11 @@ func (g *SWin) displayMsg(msg string) {
 	dlg.Run()
 } // func (g *SWin) displayMsg(msg string)
 
-func (g *SWin) scanFolder() {
-	krylib.Trace()
-	defer g.log.Printf("[TRACE] EXIT %s\n",
-		krylib.TraceInfo())
+func (g *SWin) quit() {
+	gtk.MainQuit()
+} // func (g *SWin) quit()
 
+func (g *SWin) handleAddRoot() {
 	var (
 		err error
 		dlg *gtk.FileChooserDialog
@@ -254,39 +333,122 @@ func (g *SWin) scanFolder() {
 
 	switch res {
 	case gtk.RESPONSE_CANCEL:
-		g.log.Println("[DEBUG] Ha, you almost got me.")
+		g.log.Println("[TRACE] Suit yourself")
 		return
 	case gtk.RESPONSE_OK:
-		var path string
-		if path, err = dlg.GetCurrentFolder(); err != nil {
-			g.log.Printf("[ERROR] Cannot get folder from dialog: %s\n",
+		var (
+			db       *database.Database
+			store    *gtk.TreeStore
+			iter     *gtk.TreeIter
+			stampStr string
+			root     = new(model.Root)
+		)
+
+		if root.Path, err = dlg.GetCurrentFolder(); err != nil {
+			g.log.Printf("[ERROR] Cannot get folder from Dialog: %s\n",
 				err.Error())
 			return
 		}
 
-		go g.scanner.Walk(path) // nolint: errcheck
-		glib.TimeoutAdd(1000,
-			func() bool {
-				var (
-					ex   error
-					item *gtk.MenuItem
-				)
+		db = g.pool.Get()
+		defer g.pool.Put(db)
 
-				if item, ex = gtk.MenuItemNewWithLabel(path); ex != nil {
-					g.log.Printf("[ERROR] Cannot create MenuItem for %q: %s\n",
-						path,
-						ex.Error())
-					return false
-				}
+		if err = db.RootAdd(root); err != nil {
+			g.log.Printf("[ERROR] Failed to add root folder %s to Database: %s\n",
+				root.Path,
+				err.Error())
+			return
+		}
 
-				item.Connect("activate", func() {
-					g.statusbar.Push(666, fmt.Sprintf("Update %s", path))
-					go g.scanner.Walk(path) // nolint: errcheck
-				})
+		iter = store.Append(nil)
 
-				g.dMenu.Append(item)
+		stampStr = root.LastScan.Format(common.TimestampFormatMinute)
 
-				return false
-			})
+		if err = store.SetValue(iter, 0, root.ID); err != nil {
+			g.log.Printf("[ERROR] Cannot set ID for Root %s (%d): %s\n",
+				root.Path,
+				root.ID,
+				err.Error())
+			return
+		} else if err = store.SetValue(iter, 1, root.Path); err != nil {
+			g.log.Printf("[ERROR] Cannot display Path for Root %s: %s\n",
+				root.Path,
+				err.Error())
+			return
+		} else if err = store.SetValue(iter, 2, stampStr); err != nil {
+			g.log.Printf("[ERROR] Cannot display LastScan timestamp of Root %s: %s\n",
+				root.Path,
+				err.Error())
+			return
+		}
+
 	}
-} // func (g *SWin) scanFolder()
+} // func (g *SWin) handleAddRoot()
+
+// func (g *SWin) scanFolder() {
+// 	krylib.Trace()
+// 	defer g.log.Printf("[TRACE] EXIT %s\n",
+// 		krylib.TraceInfo())
+
+// 	var (
+// 		err error
+// 		dlg *gtk.FileChooserDialog
+// 		res gtk.ResponseType
+// 	)
+
+// 	if dlg, err = gtk.FileChooserDialogNewWith2Buttons(
+// 		"Scan Folder",
+// 		g.win,
+// 		gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
+// 		"Cancel",
+// 		gtk.RESPONSE_CANCEL,
+// 		"OK",
+// 		gtk.RESPONSE_OK,
+// 	); err != nil {
+// 		g.log.Printf("[ERROR] Cannot create FileChooserDialog: %s\n",
+// 			err.Error())
+// 		return
+// 	}
+
+// 	defer dlg.Close()
+
+// 	res = dlg.Run()
+
+// 	switch res {
+// 	case gtk.RESPONSE_CANCEL:
+// 		g.log.Println("[DEBUG] Ha, you almost got me.")
+// 		return
+// 	case gtk.RESPONSE_OK:
+// 		var path string
+// 		if path, err = dlg.GetCurrentFolder(); err != nil {
+// 			g.log.Printf("[ERROR] Cannot get folder from dialog: %s\n",
+// 				err.Error())
+// 			return
+// 		}
+
+// 		go g.scanner.Walk(path) // nolint: errcheck
+// 		glib.TimeoutAdd(1000,
+// 			func() bool {
+// 				var (
+// 					ex   error
+// 					item *gtk.MenuItem
+// 				)
+
+// 				if item, ex = gtk.MenuItemNewWithLabel(path); ex != nil {
+// 					g.log.Printf("[ERROR] Cannot create MenuItem for %q: %s\n",
+// 						path,
+// 						ex.Error())
+// 					return false
+// 				}
+
+// 				item.Connect("activate", func() {
+// 					g.statusbar.Push(666, fmt.Sprintf("Update %s", path))
+// 					go g.scanner.Walk(path) // nolint: errcheck
+// 				})
+
+// 				g.dMenu.Append(item)
+
+// 				return false
+// 			})
+// 	}
+// } // func (g *SWin) scanFolder()
