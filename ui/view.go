@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 02. 01. 2025 by Benjamin Walkenhorst
 // (c) 2025 Benjamin Walkenhorst
-// Time-stamp: <2025-01-02 19:54:45 krylon>
+// Time-stamp: <2025-01-04 14:38:30 krylon>
 
 package ui
 
@@ -18,6 +18,7 @@ type tabIdx uint8
 // nolint: deadcode,unused,varcheck
 const (
 	tiRoot tabIdx = iota
+	tiFiles
 	tiSearch
 )
 

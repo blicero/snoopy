@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 30. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-03 22:25:01 krylon>
+// Time-stamp: <2025-01-04 14:42:20 krylon>
 
 package ui
 
@@ -314,7 +314,7 @@ func (g *SWin) handleAddRoot() {
 	)
 
 	if dlg, err = gtk.FileChooserDialogNewWith2Buttons(
-		"Scan Folder",
+		"Add Directory Tree",
 		g.win,
 		gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
 		"Cancel",
@@ -338,7 +338,7 @@ func (g *SWin) handleAddRoot() {
 	case gtk.RESPONSE_OK:
 		var (
 			db       *database.Database
-			store    *gtk.TreeStore
+			store    *gtk.ListStore
 			iter     *gtk.TreeIter
 			stampStr string
 			root     = new(model.Root)
@@ -350,6 +350,9 @@ func (g *SWin) handleAddRoot() {
 			return
 		}
 
+		g.log.Printf("[DEBUG] Adding Root folder %s to database\n",
+			root.Path)
+
 		db = g.pool.Get()
 		defer g.pool.Put(db)
 
@@ -360,7 +363,8 @@ func (g *SWin) handleAddRoot() {
 			return
 		}
 
-		iter = store.Append(nil)
+		store = g.tabs[tiRoot].store.(*gtk.ListStore)
+		iter = store.Append()
 
 		stampStr = root.LastScan.Format(common.TimestampFormatMinute)
 
@@ -381,7 +385,6 @@ func (g *SWin) handleAddRoot() {
 				err.Error())
 			return
 		}
-
 	}
 } // func (g *SWin) handleAddRoot()
 

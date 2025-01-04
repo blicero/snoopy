@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 31. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-02 19:05:22 krylon>
+// Time-stamp: <2025-01-04 14:20:23 krylon>
 
 package ui
 
@@ -70,6 +70,7 @@ func (g *SWin) initMenu() error {
 
 	// Step 3 Register signal handlers
 	quitItem.Connect("activate", g.quit)
+	rootAddItem.Connect("activate", g.handleAddRoot)
 
 	return nil
 } // func (g *SWin) initMenu() error
