@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 31. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-04 14:20:23 krylon>
+// Time-stamp: <2025-01-06 17:36:37 krylon>
 
 package ui
 
@@ -17,11 +17,11 @@ func (g *SWin) initMenu() error {
 		krylib.TraceInfo())
 
 	var (
-		err                   error
-		fileMenu, editMenu    *gtk.Menu
-		fmItem, emItem        *gtk.MenuItem
-		rootAddItem, quitItem *gtk.MenuItem
-		prefItem              *gtk.MenuItem
+		err                                 error
+		fileMenu, editMenu                  *gtk.Menu
+		fmItem, emItem                      *gtk.MenuItem
+		rootAddItem, rootScanItem, quitItem *gtk.MenuItem
+		prefItem, loadViewItem              *gtk.MenuItem
 	)
 
 	// Step 1 Create the menus and items
@@ -46,6 +46,10 @@ func (g *SWin) initMenu() error {
 		g.log.Printf("[ERROR] Failed to create Menu item to add root: %s\n",
 			err.Error())
 		return err
+	} else if rootScanItem, err = gtk.MenuItemNewWithMnemonic("_Scan Roots"); err != nil {
+		g.log.Printf("[ERROR] Failed to create Menu item to scan roots: %s\n",
+			err.Error())
+		return err
 	} else if quitItem, err = gtk.MenuItemNewWithMnemonic("_Quit"); err != nil {
 		g.log.Printf("[ERROR] Failed to create Menu item to quit: %s\n",
 			err.Error())
@@ -54,15 +58,21 @@ func (g *SWin) initMenu() error {
 		g.log.Printf("[ERROR] Failed to create Menu Item _Preferences: %s\n",
 			err.Error())
 		return err
+	} else if loadViewItem, err = gtk.MenuItemNewWithMnemonic("_Load View data"); err != nil {
+		g.log.Printf("[ERROR] Failed to create Menu Item _Load View data: %s\n",
+			err.Error())
+		return err
 	}
 
 	// Step 2 Assemble the menus and add them to the menubar
 
 	fmItem.SetSubmenu(fileMenu)
 	fileMenu.Append(rootAddItem)
+	fileMenu.Append(rootScanItem)
 	fileMenu.Append(quitItem)
 
 	emItem.SetSubmenu(editMenu)
+	editMenu.Append(loadViewItem)
 	editMenu.Append(prefItem)
 
 	g.menu.Append(fmItem)
@@ -71,6 +81,9 @@ func (g *SWin) initMenu() error {
 	// Step 3 Register signal handlers
 	quitItem.Connect("activate", g.quit)
 	rootAddItem.Connect("activate", g.handleAddRoot)
+	rootScanItem.Connect("activate", g.handleScanRoot)
+
+	loadViewItem.Connect("activate", g.loadViewData)
 
 	return nil
 } // func (g *SWin) initMenu() error

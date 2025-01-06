@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 30. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-04 14:42:20 krylon>
+// Time-stamp: <2025-01-06 17:34:30 krylon>
 
 package ui
 
@@ -212,6 +212,9 @@ func Create() (*SWin, error) {
 		g.notebook.AppendPage(tab.vbox, lbl)
 	}
 
+	// Initialize views
+	defer g.loadViewData()
+
 	if err = g.initMenu(); err != nil {
 		return nil, err
 	}
@@ -233,10 +236,6 @@ func Create() (*SWin, error) {
 
 	return g, nil
 } // func Create() (*SWin, error)
-
-func dummyFilter(model *gtk.TreeModel, iter *gtk.TreeIter) bool {
-	return true
-} // func dummyFilter(model *gtk.TreeModel, iter *gtk.TreeIter) bool
 
 // Run executes gtk's main event loop.
 func (g *SWin) Run() {
@@ -388,6 +387,32 @@ func (g *SWin) handleAddRoot() {
 	}
 } // func (g *SWin) handleAddRoot()
 
+func (g *SWin) handleScanRoot() {
+	krylib.Trace()
+
+	var (
+		err   error
+		db    *database.Database
+		roots []*model.Root
+	)
+
+	db = g.pool.Get()
+	defer g.pool.Put(db)
+
+	if roots, err = db.RootGetAll(); err != nil {
+		g.log.Printf("[ERROR] Failed to load all Roots from database: %s\n",
+			err.Error())
+	}
+
+	for idx, r := range roots {
+		g.log.Printf("[INFO] Schedule root %d/%d (%s) for scan\n",
+			idx+1,
+			len(roots),
+			r.Path)
+		g.scanner.ScheduleScan(r)
+	}
+} // func (g *SWin) handleScanRoot()
+
 // func (g *SWin) scanFolder() {
 // 	krylib.Trace()
 // 	defer g.log.Printf("[TRACE] EXIT %s\n",
@@ -455,3 +480,103 @@ func (g *SWin) handleAddRoot() {
 // 			})
 // 	}
 // } // func (g *SWin) scanFolder()
+
+func (g *SWin) loadViewData() {
+	var (
+		err   error
+		db    *database.Database
+		store *gtk.ListStore
+		roots []*model.Root
+		files []*model.File
+	)
+
+	db = g.pool.Get()
+	defer g.pool.Put(db)
+
+	if roots, err = db.RootGetAll(); err != nil {
+		g.log.Printf("[ERROR] Failed to load roots from database: %s\n",
+			err.Error())
+		return
+	}
+
+	store = g.tabs[tiRoot].store.(*gtk.ListStore)
+
+	store.Clear()
+
+	for _, r := range roots {
+		var (
+			stampStr string
+			iter     = store.Append()
+		)
+
+		stampStr = r.LastScan.Format(common.TimestampFormatMinute)
+
+		if err = store.SetValue(iter, 0, r.ID); err != nil {
+			g.log.Printf("[ERROR] Cannot set ID for Root %s (%d): %s\n",
+				r.Path,
+				r.ID,
+				err.Error())
+			return
+		} else if err = store.SetValue(iter, 1, r.Path); err != nil {
+			g.log.Printf("[ERROR] Cannot display Path for Root %s: %s\n",
+				r.Path,
+				err.Error())
+			return
+		} else if err = store.SetValue(iter, 2, stampStr); err != nil {
+			g.log.Printf("[ERROR] Cannot display LastScan timestamp of Root %s: %s\n",
+				r.Path,
+				err.Error())
+			return
+		}
+	}
+
+	store = g.tabs[tiFiles].store.(*gtk.ListStore)
+
+	if files, err = db.FileGetAll(); err != nil {
+		g.log.Printf("[ERROR] Failed to load all Files from database: %s\n",
+			err.Error())
+		return
+	}
+
+	store.Clear()
+
+	for _, f := range files {
+		var (
+			stampStr = f.LastRefresh.Format(common.TimestampFormatMinute)
+			ctimeStr = f.CTime.Format(common.TimestampFormatMinute)
+			iter     = store.Append()
+		)
+
+		if err = store.SetValue(iter, 0, f.ID); err != nil {
+			g.log.Printf("[ERROR] Cannot set ID for File %s (%d): %s\n",
+				f.Path,
+				f.ID,
+				err.Error())
+			return
+		} else if err = store.SetValue(iter, 1, f.Path); err != nil {
+			g.log.Printf("[ERROR] Cannot set Path for File %s (%d): %s\n",
+				f.Path,
+				f.ID,
+				err.Error())
+			return
+		} else if err = store.SetValue(iter, 2, f.Type); err != nil {
+			g.log.Printf("[ERROR] Cannot set MIME Type for File %s (%d): %s\n",
+				f.Path,
+				f.ID,
+				err.Error())
+			return
+		} else if err = store.SetValue(iter, 3, stampStr); err != nil {
+			g.log.Printf("[ERROR] Cannot set LastRefresh for File %s (%d): %s\n",
+				f.Path,
+				f.ID,
+				err.Error())
+			return
+		} else if err = store.SetValue(iter, 3, ctimeStr); err != nil {
+			g.log.Printf("[ERROR] Cannot set CTime for File %s (%d): %s\n",
+				f.Path,
+				f.ID,
+				err.Error())
+			return
+		}
+	}
+} // func (g *SWin) loadViewData()

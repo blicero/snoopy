@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 02. 01. 2025 by Benjamin Walkenhorst
 // (c) 2025 Benjamin Walkenhorst
-// Time-stamp: <2025-01-04 14:38:30 krylon>
+// Time-stamp: <2025-01-06 17:13:40 krylon>
 
 package ui
 
@@ -101,26 +101,30 @@ func (v *view) create(handlerFactory cellEditHandlerFactory) (gtk.ITreeModel, *g
 	return store, filter, tv, nil
 } // func (v *view) create(handlerFactory cellEditHandlerFactory) (gtk.ITreeModel, *gtk.TreeModelFilter, *gtk.TreeView, error)
 
+func dummyFilter(model *gtk.TreeModel, iter *gtk.TreeIter) bool {
+	return true
+} // func dummyFilter(model *gtk.TreeModel, iter *gtk.TreeIter) bool
+
 var viewList = []view{
-	view{
+	{
 		title: "Root",
 		store: storeList,
 		columns: []column{
-			column{
+			{
 				colType: glib.TYPE_INT,
 				title:   "ID",
 			},
-			column{
+			{
 				colType: glib.TYPE_STRING,
 				title:   "Path",
 			},
-			column{
+			{
 				colType: glib.TYPE_STRING,
 				title:   "Last Scan",
 			},
 		},
 	},
-	view{
+	{
 		title: "Files",
 		store: storeList,
 		columns: []column{
@@ -150,7 +154,7 @@ var viewList = []view{
 			},
 		},
 	},
-	view{
+	{
 		title: "Search",
 		store: storeList,
 		columns: []column{
