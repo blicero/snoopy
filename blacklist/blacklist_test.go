@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2024-12-23 19:56:22 krylon>
+// Time-stamp: <2025-01-06 18:55:47 krylon>
 
 package blacklist
 
@@ -41,10 +41,10 @@ func TestCreatePatterns(t *testing.T) {
 
 		if c.isGlob {
 			kind = "Glob"
-			item, err = NewGlobItem(c.pattern)
+			item, err = NewGlobItem(0, 0, c.pattern)
 		} else {
 			kind = "Regex"
-			item, err = NewReItem(c.pattern)
+			item, err = NewReItem(0, 0, c.pattern)
 		}
 
 		if err != nil {

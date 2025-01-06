@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2024-12-25 17:34:36 krylon>
+// Time-stamp: <2025-01-06 18:36:05 krylon>
 
 package database
 
@@ -71,10 +71,20 @@ FROM file
 	query.BlacklistAdd: `
 INSERT INTO blacklist (pattern, is_glob)
 VALUES                (      ?,       ?)
+RETURNING id
 `,
 	query.BlacklistHit: `
 UPDATE blacklist
 SET hit_cnt = hit_cnt + 1
 WHERE id = ?
+`,
+	query.BlacklistGetAll: `
+SELECT
+    id,
+    pattern,
+    is_glob,
+    hit_cnt
+FROM blacklist
+ORDER BY hit_cnt DESC
 `,
 }

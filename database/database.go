@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2024-12-28 18:01:36 krylon>
+// Time-stamp: <2025-01-06 19:00:33 krylon>
 
 // Package database provides the persistence layer for the application.
 package database
@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/blicero/krylib"
+	"github.com/blicero/snoopy/blacklist"
 	"github.com/blicero/snoopy/common"
 	"github.com/blicero/snoopy/database/query"
 	"github.com/blicero/snoopy/logdomain"
@@ -1380,3 +1381,244 @@ EXEC_QUERY:
 
 	return files, nil
 } // func (db *Database) FileGetAll(pat string) ([]*model.File, error)
+
+// BlacklistAdd adds a new Blacklist Item to the database
+func (db *Database) BlacklistAdd(item blacklist.Item) error {
+	const qid query.ID = query.BlacklistAdd
+	var (
+		err    error
+		msg    string
+		stmt   *sql.Stmt
+		tx     *sql.Tx
+		status bool
+	)
+
+	if stmt, err = db.getQuery(qid); err != nil {
+		db.log.Printf("[ERROR] Cannot prepare query %s: %s\n",
+			qid,
+			err.Error())
+		return err
+	} else if db.tx != nil {
+		tx = db.tx
+	} else {
+		// db.log.Printf("[INFO] Start ad-hoc transaction for adding Feed %s\n",
+		// 	f.Title)
+	BEGIN_AD_HOC:
+		if tx, err = db.db.Begin(); err != nil {
+			if worthARetry(err) {
+				waitForRetry()
+				goto BEGIN_AD_HOC
+			} else {
+				msg = fmt.Sprintf("Error starting transaction: %s\n",
+					err.Error())
+				db.log.Printf("[ERROR] %s\n", msg)
+				return errors.New(msg)
+			}
+
+		} else {
+			defer func() {
+				var err2 error
+				if status {
+					if err2 = tx.Commit(); err2 != nil {
+						db.log.Printf("[ERROR] Failed to commit ad-hoc transaction: %s\n",
+							err2.Error())
+					}
+				} else if err2 = tx.Rollback(); err2 != nil {
+					db.log.Printf("[ERROR] Rollback of ad-hoc transaction failed: %s\n",
+						err2.Error())
+				}
+			}()
+		}
+	}
+
+	stmt = tx.Stmt(stmt)
+	var (
+		rows    *sql.Rows
+		pattern string
+		isGlob  bool
+	)
+
+	switch bitem := item.(type) {
+	case *blacklist.ReItem:
+		pattern = bitem.Pattern.String()
+	case *blacklist.GlobItem:
+		pattern = bitem.Raw
+		isGlob = true
+	}
+
+EXEC_QUERY:
+	if rows, err = stmt.Query(pattern, isGlob); err != nil {
+		if worthARetry(err) {
+			waitForRetry()
+			goto EXEC_QUERY
+		} else {
+			err = fmt.Errorf("Cannot add BlacklistItem %s to database: %s",
+				pattern,
+				err.Error())
+			db.log.Printf("[ERROR] %s\n", err.Error())
+			return err
+		}
+	} else {
+		var id int64
+
+		defer rows.Close()
+
+		if !rows.Next() {
+			// CANTHAPPEN
+			db.log.Printf("[ERROR] Query %s did not return a value\n",
+				qid)
+			return fmt.Errorf("Query %s did not return a value", qid)
+		} else if err = rows.Scan(&id); err != nil {
+			msg = fmt.Sprintf("Failed to get ID for newly added BlacklistItem %s: %s",
+				item.GetPattern(),
+				err.Error())
+			db.log.Printf("[ERROR] %s\n", msg)
+			return errors.New(msg)
+		}
+
+		switch bitem := item.(type) {
+		case *blacklist.ReItem:
+			bitem.ID = id
+		case *blacklist.GlobItem:
+			bitem.ID = id
+		}
+
+		status = true
+		return nil
+	}
+} // func (db *Database) BlacklistAdd(item blacklist.Item) error
+
+// BlacklistHit increases the hit count for the given Item
+func (db *Database) BlacklistHit(item blacklist.Item) error {
+	const qid query.ID = query.BlacklistHit
+	var (
+		err    error
+		msg    string
+		stmt   *sql.Stmt
+		tx     *sql.Tx
+		status bool
+	)
+
+	if stmt, err = db.getQuery(qid); err != nil {
+		db.log.Printf("[ERROR] Cannot prepare query %s: %s\n",
+			qid,
+			err.Error())
+		return err
+	} else if db.tx != nil {
+		tx = db.tx
+	} else {
+		// db.log.Printf("[INFO] Start ad-hoc transaction for adding Feed %s\n",
+		// 	f.Title)
+	BEGIN_AD_HOC:
+		if tx, err = db.db.Begin(); err != nil {
+			if worthARetry(err) {
+				waitForRetry()
+				goto BEGIN_AD_HOC
+			} else {
+				msg = fmt.Sprintf("Error starting transaction: %s\n",
+					err.Error())
+				db.log.Printf("[ERROR] %s\n", msg)
+				return errors.New(msg)
+			}
+
+		} else {
+			defer func() {
+				var err2 error
+				if status {
+					if err2 = tx.Commit(); err2 != nil {
+						db.log.Printf("[ERROR] Failed to commit ad-hoc transaction: %s\n",
+							err2.Error())
+					}
+				} else if err2 = tx.Rollback(); err2 != nil {
+					db.log.Printf("[ERROR] Rollback of ad-hoc transaction failed: %s\n",
+						err2.Error())
+				}
+			}()
+		}
+	}
+
+	stmt = tx.Stmt(stmt)
+
+EXEC_QUERY:
+	if _, err = stmt.Exec(item.GetID()); err != nil {
+		if worthARetry(err) {
+			waitForRetry()
+			goto EXEC_QUERY
+		} else {
+			err = fmt.Errorf("Cannot update hit count of Blacklist Item %d: %s",
+				item.GetID(),
+				err.Error())
+			db.log.Printf("[ERROR] %s\n", err.Error())
+			return err
+		}
+	}
+
+	status = true
+	return nil
+} // func (db *Database) BlacklistHit(item blacklist.Item) error
+
+// BlacklistGetAll loads all Blacklist Items from the database
+func (db *Database) BlacklistGetAll() ([]blacklist.Item, error) {
+	const qid query.ID = query.BlacklistGetAll
+	var (
+		err  error
+		msg  string
+		stmt *sql.Stmt
+	)
+
+	if stmt, err = db.getQuery(qid); err != nil {
+		db.log.Printf("[ERROR] Cannot prepare query %s: %s\n",
+			qid,
+			err.Error())
+		return nil, err
+	} else if db.tx != nil {
+		stmt = db.tx.Stmt(stmt)
+	}
+
+	var rows *sql.Rows
+
+EXEC_QUERY:
+	if rows, err = stmt.Query(); err != nil {
+		if worthARetry(err) {
+			waitForRetry()
+			goto EXEC_QUERY
+		}
+
+		return nil, err
+	}
+
+	defer rows.Close() // nolint: errcheck,gosec
+	var items = make([]blacklist.Item, 0, 64)
+
+	for rows.Next() {
+		var (
+			id, cnt int64
+			pstring string
+			isGlob  bool
+			item    blacklist.Item
+		)
+
+		if err = rows.Scan(&id, &pstring, &isGlob, &cnt); err != nil {
+			msg = fmt.Sprintf("Error scanning row for File: %s",
+				err.Error())
+			db.log.Printf("[ERROR] %s\n", msg)
+			return nil, errors.New(msg)
+		} else if isGlob {
+			if item, err = blacklist.NewGlobItem(id, cnt, pstring); err != nil {
+				db.log.Printf("[ERROR] Failed to create GlobItem: %s\n",
+					err.Error())
+				return nil, err
+			}
+		} else {
+			if item, err = blacklist.NewReItem(id, cnt, pstring); err != nil {
+				db.log.Printf("[ERROR] Failed to create ReItem: %s\n",
+					err.Error())
+				return nil, err
+			}
+		}
+
+		items = append(items, item)
+	}
+
+	return items, nil
+} // func (db *Database) BlacklistGetAll() ([]blacklist.Item, error)
