@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-06 17:40:09 krylon>
+// Time-stamp: <2025-01-06 18:35:01 krylon>
 
 // Package walker implements the traversal of directories and the processing
 // of the files therein.
@@ -94,7 +94,11 @@ func (w *Walker) loop() {
 		case <-w.ticker.C:
 			continue
 		case r := <-w.visitQ:
-			w.Walk(r)
+			if err := w.Walk(r); err != nil {
+				w.log.Printf("[ERROR] An error occurred while walking %s: %s\n",
+					r.Path,
+					err.Error())
+			}
 		}
 	}
 } // func (w *Walker) loop()
