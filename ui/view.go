@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 02. 01. 2025 by Benjamin Walkenhorst
 // (c) 2025 Benjamin Walkenhorst
-// Time-stamp: <2025-01-06 17:13:40 krylon>
+// Time-stamp: <2025-01-07 18:25:28 krylon>
 
 package ui
 
@@ -20,6 +20,7 @@ const (
 	tiRoot tabIdx = iota
 	tiFiles
 	tiSearch
+	tiBlacklist
 )
 
 type storeType uint8
@@ -28,6 +29,32 @@ const (
 	storeList storeType = iota
 	storeTree
 )
+
+type column struct {
+	colType glib.Type
+	title   string
+	edit    bool
+}
+
+func createCol(title string, id int) (*gtk.TreeViewColumn, *gtk.CellRendererText, error) {
+	// krylib.Trace()
+	// defer fmt.Printf("[TRACE] EXIT %s\n",
+	// 	krylib.TraceInfo())
+
+	renderer, err := gtk.CellRendererTextNew()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	col, err := gtk.TreeViewColumnNewWithAttribute(title, renderer, "text", id)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	col.SetResizable(true)
+
+	return col, renderer, nil
+} // func createCol(title string, id int) (*gtk.TreeViewColumn, *gtk.CellRendererText, error)
 
 type cellEditHandlerFactory func(int) func(*gtk.CellRendererText, string, string)
 
@@ -181,6 +208,29 @@ var viewList = []view{
 			{
 				colType: glib.TYPE_STRING,
 				title:   "CTime",
+			},
+		},
+	},
+	{
+		title: "Blacklist",
+		store: storeList,
+		columns: []column{
+			{
+				colType: glib.TYPE_INT,
+				title:   "ID",
+			},
+			{
+				colType: glib.TYPE_STRING,
+				title:   "Pattern",
+				edit:    true,
+			},
+			{
+				colType: glib.TYPE_BOOLEAN,
+				title:   "Glob?",
+			},
+			{
+				colType: glib.TYPE_INT,
+				title:   "# Hits",
 			},
 		},
 	},

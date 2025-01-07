@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 30. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-06 17:34:30 krylon>
+// Time-stamp: <2025-01-07 19:56:42 krylon>
 
 package ui
 
@@ -20,64 +20,10 @@ import (
 	"github.com/blicero/snoopy/logdomain"
 	"github.com/blicero/snoopy/model"
 	"github.com/blicero/snoopy/walker"
+	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 )
-
-type column struct {
-	colType glib.Type
-	title   string
-	edit    bool
-}
-
-// nolint: unused,deadcode
-var cols = []column{
-	{
-		colType: glib.TYPE_INT,
-		title:   "Root ID",
-	},
-	{
-		colType: glib.TYPE_STRING,
-		title:   "Root Path",
-	},
-	{
-		colType: glib.TYPE_INT,
-		title:   "File ID",
-	},
-	{
-		colType: glib.TYPE_STRING,
-		title:   "Path",
-	},
-	{
-		colType: glib.TYPE_STRING,
-		title:   "Type",
-		edit:    true,
-	},
-	{
-		colType: glib.TYPE_STRING,
-		title:   "Size",
-	},
-}
-
-func createCol(title string, id int) (*gtk.TreeViewColumn, *gtk.CellRendererText, error) {
-	// krylib.Trace()
-	// defer fmt.Printf("[TRACE] EXIT %s\n",
-	// 	krylib.TraceInfo())
-
-	renderer, err := gtk.CellRendererTextNew()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	col, err := gtk.TreeViewColumnNewWithAttribute(title, renderer, "text", id)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	col.SetResizable(true)
-
-	return col, renderer, nil
-} // func createCol(title string, id int) (*gtk.TreeViewColumn, *gtk.CellRendererText, error)
 
 type tabContent struct {
 	vbox   *gtk.Box
@@ -117,7 +63,7 @@ func Create() (*SWin, error) {
 		g.log.Printf("[ERROR] Failed to create database connection pool: %s\n",
 			err.Error())
 		return nil, err
-	} else if g.scanner, err = walker.NewWalker(blacklist.NewBlacklist()); err != nil {
+	} else if g.scanner, err = walker.New(); err != nil {
 		g.log.Printf("[ERROR] Failed to create Walker: %s\n",
 			err.Error())
 		return nil, err
@@ -219,9 +165,9 @@ func Create() (*SWin, error) {
 		return nil, err
 	}
 
-	// ...
-
+	// Register signal handlers
 	g.win.Connect("destroy", gtk.MainQuit)
+	g.tabs[tiRoot].view.Connect("button-press-event", g.handleRootListClick)
 
 	g.win.Add(g.mainBox)
 	g.mainBox.PackStart(g.menu, false, false, 0)
@@ -300,6 +246,11 @@ func (g *SWin) displayMsg(msg string) {
 	dlg.ShowAll()
 	dlg.Run()
 } // func (g *SWin) displayMsg(msg string)
+
+func (g *SWin) logError(msg string) {
+	g.log.Printf("[ERROR] %s\n", msg)
+	g.displayMsg(msg)
+} // func (g *SWin) logError(msg string)
 
 func (g *SWin) quit() {
 	gtk.MainQuit()
@@ -483,15 +434,20 @@ func (g *SWin) handleScanRoot() {
 
 func (g *SWin) loadViewData() {
 	var (
-		err   error
-		db    *database.Database
-		store *gtk.ListStore
-		roots []*model.Root
-		files []*model.File
+		err     error
+		db      *database.Database
+		store   *gtk.ListStore
+		roots   []*model.Root
+		files   []*model.File
+		blItems []blacklist.Item
 	)
 
 	db = g.pool.Get()
 	defer g.pool.Put(db)
+
+	/////////////////////////////////
+	// Roots ////////////////////////
+	/////////////////////////////////
 
 	if roots, err = db.RootGetAll(); err != nil {
 		g.log.Printf("[ERROR] Failed to load roots from database: %s\n",
@@ -529,6 +485,10 @@ func (g *SWin) loadViewData() {
 			return
 		}
 	}
+
+	/////////////////////////////////
+	// Files ////////////////////////
+	/////////////////////////////////
 
 	store = g.tabs[tiFiles].store.(*gtk.ListStore)
 
@@ -579,4 +539,168 @@ func (g *SWin) loadViewData() {
 			return
 		}
 	}
+
+	/////////////////////////////////
+	// Blacklist ////////////////////
+	/////////////////////////////////
+
+	if blItems, err = db.BlacklistGetAll(); err != nil {
+		var msg = fmt.Sprintf("Failed to load BlacklistItems: %s",
+			err.Error())
+		g.logError(msg)
+		return
+	}
+
+	store = g.tabs[tiBlacklist].store.(*gtk.ListStore)
+	store.Clear()
+
+	for _, i := range blItems {
+		var iter = store.Append()
+		if err = store.SetValue(iter, 0, i.GetID()); err != nil {
+			g.logError(err.Error())
+			return
+		} else if err = store.SetValue(iter, 1, i.GetPattern()); err != nil {
+			g.logError(err.Error())
+			return
+		} else if err = store.SetValue(iter, 2, i.IsGlob()); err != nil {
+			g.logError(err.Error())
+			return
+		} else if err = store.SetValue(iter, 3, i.HitCount()); err != nil {
+			g.logError(err.Error())
+			return
+		}
+	}
+
 } // func (g *SWin) loadViewData()
+
+func (g *SWin) handleRootListClick(view *gtk.TreeView, evt *gdk.Event) {
+	krylib.Trace()
+	var be = gdk.EventButtonNewFromEvent(evt)
+
+	if be.Button() != gdk.BUTTON_SECONDARY {
+		return
+	}
+
+	var (
+		err    error
+		exists bool
+		x, y   float64
+		msg    string
+		path   *gtk.TreePath
+		store  *gtk.TreeModel
+		istore gtk.ITreeModel
+		filter *gtk.TreeModelFilter
+		iter   *gtk.TreeIter
+	)
+
+	x = be.X()
+	y = be.Y()
+	path, _, _, _, exists = view.GetPathAtPos(int(x), int(y))
+
+	if !exists {
+		g.log.Printf("[DEBUG] There is no item at %f/%f\n",
+			x,
+			y)
+		return
+	} else if istore, err = view.GetModel(); err != nil {
+		g.log.Printf("[ERROR] Cannot get Model from View: %s\n",
+			err.Error())
+		return
+	}
+
+	filter = istore.(*gtk.TreeModelFilter)
+	store = g.tabs[tiRoot].store.ToTreeModel()
+
+	if iter, err = filter.GetIter(path); err != nil {
+		g.log.Printf("[ERROR] Cannot get Iter from TreePath %s: %s\n",
+			path,
+			err.Error())
+		return
+	}
+
+	iter = filter.ConvertIterToChildIter(iter)
+	path, _ = store.GetPath(iter)
+
+	var (
+		val *glib.Value
+		gv  any
+		id  int64
+	)
+
+	if val, err = store.GetValue(iter, 0); err != nil {
+		g.log.Printf("[ERROR] Cannot get value for column 0: %s\n",
+			err.Error())
+		return
+	} else if gv, err = val.GoValue(); err != nil {
+		g.log.Printf("[ERROR] Cannot get Go value from GLib value: %s\n",
+			err.Error())
+		return
+	}
+
+	switch v := gv.(type) {
+	case int:
+		id = int64(v)
+	case int64:
+		id = v
+	default:
+		g.log.Printf("[ERROR] Unexpected type for ID column: %T\n",
+			v)
+		return
+	}
+
+	var (
+		db   *database.Database
+		root *model.Root
+		menu *gtk.Menu
+	)
+
+	db = g.pool.Get()
+	defer g.pool.Put(db)
+
+	if root, err = db.RootGetByID(id); err != nil {
+		msg = fmt.Sprintf("Failed to load Root #%d: %s",
+			id,
+			err.Error())
+		g.logError(msg)
+		return
+	} else if root == nil {
+		msg = fmt.Sprintf("Root #%d was not found in database", id)
+		g.log.Printf("[CANTHAPPEN] %s\n", msg)
+		g.displayMsg(msg)
+		return
+	} else if menu, err = g.mkRootContextMenu(path, root); err != nil {
+		g.logError(err.Error())
+		return
+	}
+
+	menu.ShowAll()
+	menu.PopupAtPointer(evt)
+} // func (g *SWin) handleRootListClick(view *gtk.TreeView, evt *gdk.Event)
+
+func (g *SWin) mkRootContextMenu(_ *gtk.TreePath, root *model.Root) (*gtk.Menu, error) {
+	krylib.Trace()
+	var (
+		err                  error
+		menu                 *gtk.Menu
+		scanItem, deleteItem *gtk.MenuItem
+	)
+
+	if menu, err = gtk.MenuNew(); err != nil {
+		goto ERROR
+	} else if scanItem, err = gtk.MenuItemNewWithMnemonic("_Scan"); err != nil {
+		goto ERROR
+	} else if deleteItem, err = gtk.MenuItemNewWithMnemonic("_Delete"); err != nil {
+		goto ERROR
+	}
+
+	scanItem.Connect("activate", func() { g.scanner.ScheduleScan(root) })
+	deleteItem.Connect("activate", func() { g.displayMsg("IMPLEMENT ME!") })
+
+	menu.Append(scanItem)
+	menu.Append(deleteItem)
+	return menu, nil
+
+ERROR:
+	g.logError(err.Error())
+	return nil, err
+} // func (g *SWin) mkRootContextMenu(path *gtk.TreePath, root *model.Root) (*gtk.Menu, error)
