@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-06 18:35:01 krylon>
+// Time-stamp: <2025-01-07 20:27:16 krylon>
 
 // Package walker implements the traversal of directories and the processing
 // of the files therein.
@@ -41,8 +41,8 @@ type Walker struct {
 	ticker *time.Ticker
 }
 
-// NewWalker creates a new Walker instance that uses the given Blacklist.
-func NewWalker(bl *blacklist.Blacklist) (*Walker, error) {
+// NewWithBlacklist creates a new Walker instance that uses the given Blacklist.
+func NewWithBlacklist(bl *blacklist.Blacklist) (*Walker, error) {
 	var (
 		err    error
 		dbpath string
@@ -62,6 +62,7 @@ func NewWalker(bl *blacklist.Blacklist) (*Walker, error) {
 		w.log.Printf("[ERROR] Failed to open database at %s: %s\n",
 			dbpath,
 			err.Error())
+		return nil, err
 	}
 
 	w.visitQ = make(chan *model.Root, 16)
@@ -70,7 +71,49 @@ func NewWalker(bl *blacklist.Blacklist) (*Walker, error) {
 	go w.loop()
 
 	return w, nil
-} // func NewWalker(bl *blacklist.Blacklist) (*Walker, error)
+} // func NewWithBlacklist(bl *blacklist.Blacklist) (*Walker, error)
+
+// New creates a new Walker instance that uses the blacklist from the database.
+func New() (*Walker, error) {
+	var (
+		err    error
+		dbpath string
+		w      = new(Walker)
+	)
+
+	dbpath = common.Path(path.Database)
+
+	if w.log, err = common.GetLogger(logdomain.Walker); err != nil {
+		fmt.Fprintf(
+			os.Stderr,
+			"Error creating Log for Walker: %s\n",
+			err.Error(),
+		)
+		return nil, err
+	} else if w.db, err = database.Open(dbpath); err != nil {
+		w.log.Printf("[ERROR] Failed to open database at %s: %s\n",
+			dbpath,
+			err.Error())
+		return nil, err
+	}
+
+	var items []blacklist.Item
+
+	if items, err = w.db.BlacklistGetAll(); err != nil {
+		w.log.Printf("[ERROR] Failed to load all blacklist Items: %s\n",
+			err.Error())
+		return nil, err
+	}
+
+	w.bl = blacklist.NewBlacklist(items...)
+
+	w.visitQ = make(chan *model.Root, 16)
+	w.ticker = time.NewTicker(time.Minute)
+	w.active.Store(true)
+	go w.loop()
+
+	return w, nil
+} // func NewWithBlacklist(bl *blacklist.Blacklist) (*Walker, error)
 
 // IsActive returns the Walker's Active flag
 func (w *Walker) IsActive() bool {
@@ -124,6 +167,7 @@ func (w *Walker) generateVisitorFunc(r *model.Root) fs.WalkDirFunc {
 		var (
 			err   error
 			f     *model.File
+			ftype fs.FileMode
 			info  fs.FileInfo
 			mtype *mimetype.MIME
 		)
@@ -133,9 +177,15 @@ func (w *Walker) generateVisitorFunc(r *model.Root) fs.WalkDirFunc {
 				incoming,
 				incoming.Error())
 		} else if w.bl.Match(path) {
+			// FIXME We need to increment the hit counter in the
+			//       database for the item that matched, which means
+			//       we also need to know which Item matched.
 			w.log.Printf("[DEBUG] %s is blacklisted, we are skipping it\n", path)
 			return nil
 		} else if entry.IsDir() {
+			return nil
+		} else if ftype = entry.Type(); ftype&fs.ModeType != 0 {
+			// Not a regular file: Skip it!
 			return nil
 		} else if info, err = entry.Info(); err != nil {
 			w.log.Printf("[ERROR] Cannot query FileInfo on %s: %s\n",
@@ -148,15 +198,19 @@ func (w *Walker) generateVisitorFunc(r *model.Root) fs.WalkDirFunc {
 				err.Error())
 			return err
 		} else if f == nil {
-			w.log.Printf("[TRACE] Add file %s to database...\n",
-				path)
-
 			if mtype, err = mimetype.DetectFile(path); err != nil {
+				if err.Error() == "permission denied" {
+					return nil
+				}
+
 				w.log.Printf("[ERROR] Failed to determine MIME type for %s: %s\n",
 					path,
 					err.Error())
 				return err
 			}
+
+			w.log.Printf("[TRACE] Add file %s to database...\n",
+				path)
 
 			f = &model.File{
 				RootID: r.ID,

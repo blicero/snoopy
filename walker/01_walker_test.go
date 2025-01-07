@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 28. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2024-12-30 17:46:48 krylon>
+// Time-stamp: <2025-01-07 18:22:52 krylon>
 
 package walker
 
@@ -16,7 +16,7 @@ import (
 func TestCreateWalker(t *testing.T) {
 	var err error
 
-	if w, err = NewWalker(blacklist.NewBlacklist()); err != nil {
+	if w, err = NewWithBlacklist(blacklist.NewBlacklist()); err != nil {
 		t.Fatalf("Failed to create Walker: %s",
 			err.Error())
 	}
