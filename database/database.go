@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-06 19:00:33 krylon>
+// Time-stamp: <2025-01-07 12:05:37 krylon>
 
 // Package database provides the persistence layer for the application.
 package database
@@ -1437,6 +1437,8 @@ func (db *Database) BlacklistAdd(item blacklist.Item) error {
 		pattern string
 		isGlob  bool
 	)
+
+	db.log.Printf("[DEBUG] Add Blacklist Item %s\n", item.GetPattern())
 
 	switch bitem := item.(type) {
 	case *blacklist.ReItem:
