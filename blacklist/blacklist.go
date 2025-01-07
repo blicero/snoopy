@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 22. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-06 18:54:22 krylon>
+// Time-stamp: <2025-01-07 18:12:23 krylon>
 
 // Package blacklist provides a filter meant to exclude files from scanning.
 package blacklist
@@ -19,6 +19,7 @@ import (
 type Item interface {
 	GetID() int64
 	GetPattern() string
+	IsGlob() bool
 	Match(path string) bool
 	HitCount() int64
 }
@@ -62,6 +63,9 @@ func (i *ReItem) GetID() int64 {
 func (i *ReItem) GetPattern() string {
 	return i.Pattern.String()
 } // func (i *ReItem) GetPattern() string
+
+// IsGlob returns true if the Item uses globbing (i.e. false)
+func (i *ReItem) IsGlob() bool { return false }
 
 // HitCount returns the number of times the Item has matched a path successfully
 func (i *ReItem) HitCount() int64 {
@@ -109,6 +113,9 @@ func (i *GlobItem) GetID() int64 {
 func (i *GlobItem) GetPattern() string {
 	return i.Raw
 } // func (i *GlobItem) GetPattern() string
+
+// IsGlob returns true if the Item uses globbing (in this case: true)
+func (i *GlobItem) IsGlob() bool { return true }
 
 // HitCount returns the number of times the Item has matched a path successfully
 func (i *GlobItem) HitCount() int64 {
