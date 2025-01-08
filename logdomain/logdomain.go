@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 18. 09. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2024-12-31 18:03:44 krylon>
+// Time-stamp: <2025-01-08 17:58:35 krylon>
 
 package logdomain
 
@@ -15,6 +15,7 @@ const (
 	DBPool
 	Walker
 	GUI
+	Extractor
 )
 
 func AllDomains() []ID {
@@ -23,5 +24,6 @@ func AllDomains() []ID {
 		DBPool,
 		Walker,
 		GUI,
+		Extractor,
 	}
 } // func AllDomains() []ID
