@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 01. 02. 2021 by Benjamin Walkenhorst
 // (c) 2021 Benjamin Walkenhorst
-// Time-stamp: <2025-01-02 20:58:48 krylon>
+// Time-stamp: <2025-01-08 17:59:47 krylon>
 
 //go:build ignore
 // +build ignore
@@ -72,6 +72,7 @@ var candidates = map[string][]string{
 		"common",
 		"blacklist",
 		"database",
+		"walker",
 	},
 	"vet": {
 		"common/path",
@@ -82,6 +83,8 @@ var candidates = map[string][]string{
 		"database",
 		"database/query",
 		"ui",
+		"walker",
+		"extractor",
 	},
 	"lint": {
 		"common/path",
@@ -92,6 +95,8 @@ var candidates = map[string][]string{
 		"database",
 		"database/query",
 		"ui",
+		"walker",
+		"extractor",
 	},
 	"nilaway": {
 		"common/path",
@@ -102,6 +107,8 @@ var candidates = map[string][]string{
 		"database",
 		"database/query",
 		"ui",
+		"walker",
+		"extractor",
 	},
 }
 
