@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2025-01-08 22:57:49 krylon>
+# Time-stamp: <2025-01-10 19:30:30 krylon>
 #
 #+TAGS: internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -19,19 +19,19 @@
   feasible.
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 202 :emphasize t
-   #+CAPTION: Clock summary at [2025-01-08 Mi 22:57]
+   #+CAPTION: Clock summary at [2025-01-10 Fr 19:30]
    | Headline                        | Time       |            |       |      |
    |---------------------------------+------------+------------+-------+------|
-   | *Total time*                    | *1d 16:02* |            |       |      |
+   | *Total time*                    | *1d 17:22* |            |       |      |
    |---------------------------------+------------+------------+-------+------|
-   | *Snoopy [1/3]*                  | *1d 16:02* |            |       |      |
-   | \_  /Components [1/3]/          |            | /1d 16:02/ |       |      |
+   | *Snoopy [1/3]*                  | *1d 17:22* |            |       |      |
+   | \_  /Components [1/3]/          |            | /1d 17:22/ |       |      |
    | \_    Data model [0/0]          |            |            |  0:37 |      |
    | \_    Database [1/2]            |            |            |  5:22 |      |
    | \_      Relative paths          |            |            |       | 2:09 |
    | \_    Blacklist [0/0]           |            |            |  2:51 |      |
    | \_    Walker [0/0]              |            |            | 10:48 |      |
-   | \_    Extractor [0/0]           |            |            |  5:01 |      |
+   | \_    Extractor [0/0]           |            |            |  6:21 |      |
    | \_    UI [0/1]                  |            |            | 15:23 |      |
    | \_      Edit Blacklist from GUI |            |            |       | 0:43 |
    #+END:
@@ -111,6 +111,8 @@
     :VISIBILITY: children
     :END:
     :LOGBOOK:
+    CLOCK: [2025-01-10 Fr 18:11]--[2025-01-10 Fr 19:30] =>  1:19
+    CLOCK: [2025-01-10 Fr 17:54]--[2025-01-10 Fr 17:55] =>  0:01
     CLOCK: [2025-01-08 Mi 18:12]--[2025-01-08 Mi 22:57] =>  4:45
     CLOCK: [2025-01-08 Mi 17:50]--[2025-01-08 Mi 18:06] =>  0:16
     :END:
