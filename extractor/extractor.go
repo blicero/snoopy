@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 08. 01. 2025 by Benjamin Walkenhorst
 // (c) 2025 Benjamin Walkenhorst
-// Time-stamp: <2025-01-10 19:27:14 krylon>
+// Time-stamp: <2025-01-10 22:10:34 krylon>
 
 // Package extractor deals with extracting (hence the name - duh!) searchable
 // metadata from the files the Walker has found.
@@ -16,7 +16,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/blicero/krylib"
 	"github.com/blicero/snoopy/common"
 	"github.com/blicero/snoopy/database"
 	"github.com/blicero/snoopy/logdomain"
@@ -33,17 +32,7 @@ const (
 // ErrTooLarge indicates that a file is too large to be processed.
 var ErrTooLarge = errors.New("File is too large")
 
-// FileMeta represents the metadata extracted from a File.
-type FileMeta struct {
-	ID        int64             `json:"id"`
-	FileID    int64             `json:"file_id"`
-	Timestamp time.Time         `json:"timestamp"`
-	Content   string            `json:"content"`
-	Meta      map[string]string `json:"meta"`
-	f         *model.File
-}
-
-type specialist func(*model.File) (*FileMeta, error)
+type specialist func(*model.File) (*model.FileMeta, error)
 
 // Extractor wraps the handling of various file types to extract searchable
 // metadata / content from.
@@ -73,17 +62,46 @@ func New() (*Extractor, error) {
 	return ex, nil
 } // func New() (*Extractor, error)
 
+var workers = map[string]specialist{
+	"image/jpeg": processImage,
+	"image/png":  processImage,
+	"image/gif":  processImage,
+	"audio/mpeg": processAudio,
+	"audio/ogg":  processAudio,
+	"audio/mp4":  processAudio,
+	"text/plain": processPlaintext,
+}
+
 // Process attempts to extract usable information from a file to use in a
 // search index.
-func (ex *Extractor) Process(f *model.File) (*FileMeta, error) {
-	return nil, krylib.ErrNotImplemented
-} // func (ex *Extractor) Process(f *model.File) (*FileMeta, error)
+func (ex *Extractor) Process(f *model.File) (*model.FileMeta, error) {
+	var (
+		err  error
+		meta *model.FileMeta
+		w    specialist
+		ok   bool
+	)
 
-func processPlaintext(f *model.File) (*FileMeta, error) {
+	if w, ok = workers[f.Type]; !ok {
+		ex.log.Printf("[INFO] No probe for %s (%s) was found.\n",
+			f.Path,
+			f.Type)
+		return nil, nil
+	} else if meta, err = w(f); err != nil {
+		ex.log.Printf("[ERROR] Failed to extract metadata from %s: %s\n",
+			f.Path,
+			err.Error())
+		return nil, err
+	}
+
+	return meta, nil
+} // func (ex *Extractor) Process(f *model.File) (*model.FileMeta, error)
+
+func processPlaintext(f *model.File) (*model.FileMeta, error) {
 	var (
 		err  error
 		raw  []byte
-		meta *FileMeta
+		meta *model.FileMeta
 		info os.FileInfo
 	)
 
@@ -95,22 +113,22 @@ func processPlaintext(f *model.File) (*FileMeta, error) {
 		return nil, err
 	}
 
-	meta = &FileMeta{
+	meta = &model.FileMeta{
 		FileID:    f.ID,
 		Timestamp: time.Now(),
 		Content:   string(raw),
 		Meta:      make(map[string]string),
-		f:         f,
+		F:         f,
 	}
 
 	return meta, nil
-} // func processPlaintext(f *model.File) (*FileMeta, error)
+} // func processPlaintext(f *model.File) (*model.FileMeta, error)
 
-func processAudio(f *model.File) (*FileMeta, error) {
+func processAudio(f *model.File) (*model.FileMeta, error) {
 	var (
 		err  error
 		fh   *os.File
-		meta *FileMeta
+		meta *model.FileMeta
 		am   tag.Metadata
 	)
 
@@ -124,10 +142,10 @@ func processAudio(f *model.File) (*FileMeta, error) {
 		return nil, err
 	}
 
-	meta = &FileMeta{
+	meta = &model.FileMeta{
 		FileID:    f.ID,
 		Timestamp: time.Now(),
-		f:         f,
+		F:         f,
 	}
 
 	meta.Meta = map[string]string{
@@ -138,17 +156,17 @@ func processAudio(f *model.File) (*FileMeta, error) {
 	}
 
 	return meta, nil
-} // func processAudio(f *model.File) (*FileMeta, error)
+} // func processAudio(f *model.File) (*model.FileMeta, error)
 
-func processImage(f *model.File) (*FileMeta, error) {
+func processImage(f *model.File) (*model.FileMeta, error) {
 	var (
 		err  error
 		fh   *os.File
 		im   exif2.Exif
-		meta = &FileMeta{
+		meta = &model.FileMeta{
 			FileID:    f.ID,
 			Timestamp: time.Now(),
-			f:         f,
+			F:         f,
 		}
 	)
 
@@ -171,4 +189,4 @@ func processImage(f *model.File) (*FileMeta, error) {
 	}
 
 	return meta, nil
-} // func processImage(f *model.File) (*FileMeta, error)
+} // func processImage(f *model.File) (*model.FileMeta, error)

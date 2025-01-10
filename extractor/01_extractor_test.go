@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 10. 01. 2025 by Benjamin Walkenhorst
 // (c) 2025 Benjamin Walkenhorst
-// Time-stamp: <2025-01-10 19:29:33 krylon>
+// Time-stamp: <2025-01-10 22:11:06 krylon>
 
 package extractor
 
@@ -23,7 +23,7 @@ func TestExtractor(t *testing.T) {
 	for path, ex := range samples {
 		var (
 			err  error
-			meta *FileMeta
+			meta *model.FileMeta
 			f    = &model.File{
 				RootID: 1,
 				Path:   path,
