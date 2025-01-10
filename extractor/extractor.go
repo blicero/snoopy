@@ -2,13 +2,14 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 08. 01. 2025 by Benjamin Walkenhorst
 // (c) 2025 Benjamin Walkenhorst
-// Time-stamp: <2025-01-10 18:43:20 krylon>
+// Time-stamp: <2025-01-10 19:27:14 krylon>
 
 // Package extractor deals with extracting (hence the name - duh!) searchable
 // metadata from the files the Walker has found.
 package extractor
 
 import (
+	"errors"
 	"log"
 	"os"
 	"runtime"
@@ -28,6 +29,9 @@ import (
 const (
 	bigFile = 64 * 1024 * 1024 // 64 MiB
 )
+
+// ErrTooLarge indicates that a file is too large to be processed.
+var ErrTooLarge = errors.New("File is too large")
 
 // FileMeta represents the metadata extracted from a File.
 type FileMeta struct {
@@ -80,9 +84,14 @@ func processPlaintext(f *model.File) (*FileMeta, error) {
 		err  error
 		raw  []byte
 		meta *FileMeta
+		info os.FileInfo
 	)
 
-	if raw, err = os.ReadFile(f.Path); err != nil {
+	if info, err = os.Stat(f.Path); err != nil {
+		return nil, err
+	} else if info.Size() > bigFile {
+		return nil, ErrTooLarge
+	} else if raw, err = os.ReadFile(f.Path); err != nil {
 		return nil, err
 	}
 
