@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 08. 01. 2025 by Benjamin Walkenhorst
 // (c) 2025 Benjamin Walkenhorst
-// Time-stamp: <2025-01-08 22:57:53 krylon>
+// Time-stamp: <2025-01-10 18:43:20 krylon>
 
 // Package extractor deals with extracting (hence the name - duh!) searchable
 // metadata from the files the Walker has found.
@@ -10,7 +10,9 @@ package extractor
 
 import (
 	"log"
+	"os"
 	"runtime"
+	"strconv"
 	"time"
 
 	"github.com/blicero/krylib"
@@ -18,6 +20,9 @@ import (
 	"github.com/blicero/snoopy/database"
 	"github.com/blicero/snoopy/logdomain"
 	"github.com/blicero/snoopy/model"
+	"github.com/dhowden/tag"
+	"github.com/evanoberholster/imagemeta"
+	"github.com/evanoberholster/imagemeta/exif2"
 )
 
 const (
@@ -73,8 +78,88 @@ func (ex *Extractor) Process(f *model.File) (*FileMeta, error) {
 func processPlaintext(f *model.File) (*FileMeta, error) {
 	var (
 		err  error
-		data []byte
+		raw  []byte
 		meta *FileMeta
 	)
 
+	if raw, err = os.ReadFile(f.Path); err != nil {
+		return nil, err
+	}
+
+	meta = &FileMeta{
+		FileID:    f.ID,
+		Timestamp: time.Now(),
+		Content:   string(raw),
+		Meta:      make(map[string]string),
+		f:         f,
+	}
+
+	return meta, nil
 } // func processPlaintext(f *model.File) (*FileMeta, error)
+
+func processAudio(f *model.File) (*FileMeta, error) {
+	var (
+		err  error
+		fh   *os.File
+		meta *FileMeta
+		am   tag.Metadata
+	)
+
+	if fh, err = os.Open(f.Path); err != nil {
+		return nil, err
+	}
+
+	defer fh.Close() // nolint: errcheck
+
+	if am, err = tag.ReadFrom(fh); err != nil {
+		return nil, err
+	}
+
+	meta = &FileMeta{
+		FileID:    f.ID,
+		Timestamp: time.Now(),
+		f:         f,
+	}
+
+	meta.Meta = map[string]string{
+		"Title":  am.Title(),
+		"Artist": am.Artist(),
+		"Album":  am.Album(),
+		"Year":   strconv.FormatInt(int64(am.Year()), 10),
+	}
+
+	return meta, nil
+} // func processAudio(f *model.File) (*FileMeta, error)
+
+func processImage(f *model.File) (*FileMeta, error) {
+	var (
+		err  error
+		fh   *os.File
+		im   exif2.Exif
+		meta = &FileMeta{
+			FileID:    f.ID,
+			Timestamp: time.Now(),
+			f:         f,
+		}
+	)
+
+	if fh, err = os.Open(f.Path); err != nil {
+		return nil, err
+	}
+
+	defer fh.Close() // nolint: errcheck
+
+	if im, err = imagemeta.Decode(fh); err != nil {
+		return nil, err
+	}
+
+	meta.Meta = map[string]string{
+		"Date":        im.GPS.Date().Format(common.TimestampFormat),
+		"Latitude":    strconv.FormatFloat(im.GPS.Latitude(), 'f', -1, 32),
+		"Longitude":   strconv.FormatFloat(im.GPS.Longitude(), 'f', -1, 32),
+		"XResolution": strconv.FormatUint(uint64(im.XResolution), 10),
+		"YResolution": strconv.FormatUint(uint64(im.YResolution), 10),
+	}
+
+	return meta, nil
+} // func processImage(f *model.File) (*FileMeta, error)
