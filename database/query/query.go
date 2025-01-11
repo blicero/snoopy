@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-11 17:23:09 krylon>
+// Time-stamp: <2025-01-11 18:11:46 krylon>
 
 //go:generate stringer -type=ID
 
@@ -34,6 +34,6 @@ const (
 	MetaAdd
 	MetaGetByFile
 	MetaGetByRoot
+	MetaGetOutdated
 	MetaGetAll
-	MetaUpdate
 )

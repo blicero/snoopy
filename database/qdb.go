@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-11 17:50:35 krylon>
+// Time-stamp: <2025-01-11 18:11:37 krylon>
 
 package database
 
@@ -117,6 +117,22 @@ INNER JOIN root r ON f.root_id = r.id
 WHERE r.id = ?
 ORDER BY f.path
 `,
+	query.MetaGetOutdated: `
+SELECT
+    m.id,
+    m.file_id,
+    m.timestamp,
+    m.content,
+    m.meta,
+    f.root_id,
+    f.path,
+    f.mime_type,
+    f.ctime
+FROM meta m
+INNER JOIN file f ON m.file_id = f.id
+WHERE f.ctime > m.timestamp
+ORDER BY f.path
+`,
 	query.MetaGetAll: `
 SELECT
     m.id,
@@ -130,12 +146,6 @@ SELECT
     f.ctime
 FROM meta m
 INNER JOIN file f ON m.file_id = f.id
-`,
-	query.MetaUpdate: `
-UPDATE meta SET
-    timestamp = ?,
-    content = ?,
-    meta = ?
-WHERE id = ?
+ORDER BY f.path
 `,
 }

@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-11 17:53:21 krylon>
+// Time-stamp: <2025-01-11 18:11:53 krylon>
 
 // Package database provides the persistence layer for the application.
 package database
@@ -1851,3 +1851,136 @@ EXEC_QUERY:
 
 	return results, nil
 } // func (db *Database) MetaGetByRoot(r *model.Root) ([]*model.FileMeta, error)
+
+// MetaGetOutdated loads the metadata for all Files that have metadata whose
+// timestamp is older than the File's CTime.
+func (db *Database) MetaGetOutdated() ([]*model.FileMeta, error) {
+	const qid query.ID = query.MetaGetOutdated
+	var (
+		err  error
+		msg  string
+		stmt *sql.Stmt
+	)
+
+	if stmt, err = db.getQuery(qid); err != nil {
+		db.log.Printf("[ERROR] Cannot prepare query %s: %s\n",
+			qid,
+			err.Error())
+		return nil, err
+	} else if db.tx != nil {
+		stmt = db.tx.Stmt(stmt)
+	}
+
+	var rows *sql.Rows
+
+EXEC_QUERY:
+	if rows, err = stmt.Query(); err != nil {
+		if worthARetry(err) {
+			waitForRetry()
+			goto EXEC_QUERY
+		}
+
+		return nil, err
+	}
+
+	defer rows.Close() // nolint: errcheck,gosec
+	var results = make([]*model.FileMeta, 0, 64)
+
+	for rows.Next() {
+		var (
+			timestamp, ctime int64
+			jMeta            string
+			f                = new(model.File)
+			m                = new(model.FileMeta)
+		)
+
+		if err = rows.Scan(&m.ID, &m.FileID, &m.Content, &jMeta, &f.RootID, &f.Path, &f.Type, &ctime); err != nil {
+			msg = fmt.Sprintf("Error scanning row for Metadata: %s",
+				err.Error())
+			db.log.Printf("[ERROR] %s\n", msg)
+			return nil, errors.New(msg)
+		}
+
+		f.CTime = time.Unix(ctime, 0)
+		m.Timestamp = time.Unix(timestamp, 0)
+		f.ID = m.FileID
+		m.F = f
+
+		if err = json.Unmarshal([]byte(jMeta), &m.Meta); err != nil {
+			db.log.Printf("[ERROR] Failed to parse JSON of Metadata of File %d: %s\n",
+				m.FileID,
+				err.Error())
+			return nil, err
+		}
+
+		results = append(results, m)
+	}
+
+	return results, nil
+} // func (db *Database) MetaGetOutdated() ([]*model.FileMeta, error)
+
+// MetaGetAll loads ALL metadata from the database
+func (db *Database) MetaGetAll() ([]*model.FileMeta, error) {
+	const qid query.ID = query.MetaGetAll
+	var (
+		err  error
+		msg  string
+		stmt *sql.Stmt
+	)
+
+	if stmt, err = db.getQuery(qid); err != nil {
+		db.log.Printf("[ERROR] Cannot prepare query %s: %s\n",
+			qid,
+			err.Error())
+		return nil, err
+	} else if db.tx != nil {
+		stmt = db.tx.Stmt(stmt)
+	}
+
+	var rows *sql.Rows
+
+EXEC_QUERY:
+	if rows, err = stmt.Query(); err != nil {
+		if worthARetry(err) {
+			waitForRetry()
+			goto EXEC_QUERY
+		}
+
+		return nil, err
+	}
+
+	defer rows.Close() // nolint: errcheck,gosec
+	var results = make([]*model.FileMeta, 0, 64)
+
+	for rows.Next() {
+		var (
+			timestamp, ctime int64
+			jMeta            string
+			f                = new(model.File)
+			m                = new(model.FileMeta)
+		)
+
+		if err = rows.Scan(&m.ID, &m.FileID, &m.Content, &jMeta, &f.RootID, &f.Path, &f.Type, &ctime); err != nil {
+			msg = fmt.Sprintf("Error scanning row for Metadata: %s",
+				err.Error())
+			db.log.Printf("[ERROR] %s\n", msg)
+			return nil, errors.New(msg)
+		}
+
+		f.CTime = time.Unix(ctime, 0)
+		m.Timestamp = time.Unix(timestamp, 0)
+		f.ID = m.FileID
+		m.F = f
+
+		if err = json.Unmarshal([]byte(jMeta), &m.Meta); err != nil {
+			db.log.Printf("[ERROR] Failed to parse JSON of Metadata of File %d: %s\n",
+				m.FileID,
+				err.Error())
+			return nil, err
+		}
+
+		results = append(results, m)
+	}
+
+	return results, nil
+} // func (db *Database) MetaGetAll() ([]*model.FileMeta, error)
