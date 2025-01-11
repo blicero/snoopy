@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 08. 01. 2025 by Benjamin Walkenhorst
 // (c) 2025 Benjamin Walkenhorst
-// Time-stamp: <2025-01-10 22:10:34 krylon>
+// Time-stamp: <2025-01-11 17:20:28 krylon>
 
 // Package extractor deals with extracting (hence the name - duh!) searchable
 // metadata from the files the Walker has found.
@@ -11,6 +11,7 @@ package extractor
 import (
 	"errors"
 	"log"
+	"maps"
 	"os"
 	"runtime"
 	"strconv"
@@ -30,16 +31,30 @@ const (
 )
 
 // ErrTooLarge indicates that a file is too large to be processed.
-var ErrTooLarge = errors.New("File is too large")
+// ErrNoProbe indicates we have no probe to get metadata from a file type.
+var (
+	ErrTooLarge = errors.New("File is too large")
+	ErrNoProbe  = errors.New("No matching probe was found for the given type")
+)
 
-type specialist func(*model.File) (*model.FileMeta, error)
+type probe func(*model.File) (*model.FileMeta, error)
+
+var workers = map[string]probe{
+	"image/jpeg": processImage,
+	"image/png":  processImage,
+	"image/gif":  processImage,
+	"audio/mpeg": processAudio,
+	"audio/ogg":  processAudio,
+	"audio/mp4":  processAudio,
+	"text/plain": processPlaintext,
+}
 
 // Extractor wraps the handling of various file types to extract searchable
 // metadata / content from.
 type Extractor struct {
 	log      *log.Logger
 	pool     *database.Pool
-	handlers map[string]specialist
+	handlers map[string]probe
 }
 
 // New creates a new Extractor.
@@ -47,7 +62,7 @@ func New() (*Extractor, error) {
 	var (
 		err error
 		ex  = &Extractor{
-			handlers: make(map[string]specialist),
+			handlers: maps.Clone(workers),
 		}
 	)
 
@@ -62,31 +77,21 @@ func New() (*Extractor, error) {
 	return ex, nil
 } // func New() (*Extractor, error)
 
-var workers = map[string]specialist{
-	"image/jpeg": processImage,
-	"image/png":  processImage,
-	"image/gif":  processImage,
-	"audio/mpeg": processAudio,
-	"audio/ogg":  processAudio,
-	"audio/mp4":  processAudio,
-	"text/plain": processPlaintext,
-}
-
 // Process attempts to extract usable information from a file to use in a
 // search index.
 func (ex *Extractor) Process(f *model.File) (*model.FileMeta, error) {
 	var (
 		err  error
 		meta *model.FileMeta
-		w    specialist
+		w    probe
 		ok   bool
 	)
 
-	if w, ok = workers[f.Type]; !ok {
+	if w, ok = ex.handlers[f.Type]; !ok {
 		ex.log.Printf("[INFO] No probe for %s (%s) was found.\n",
 			f.Path,
 			f.Type)
-		return nil, nil
+		return nil, ErrNoProbe
 	} else if meta, err = w(f); err != nil {
 		ex.log.Printf("[ERROR] Failed to extract metadata from %s: %s\n",
 			f.Path,

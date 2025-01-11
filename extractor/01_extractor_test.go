@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 10. 01. 2025 by Benjamin Walkenhorst
 // (c) 2025 Benjamin Walkenhorst
-// Time-stamp: <2025-01-10 22:11:06 krylon>
+// Time-stamp: <2025-01-11 16:59:59 krylon>
 
 package extractor
 
@@ -12,7 +12,7 @@ import (
 	"github.com/blicero/snoopy/model"
 )
 
-var samples = map[string]specialist{
+var samples = map[string]probe{
 	"./testdata/20250109_151326.jpg":        processImage,
 	"./testdata/Athens_-_Pierce_Murphy.mp3": processAudio,
 	"./testdata/bear_hugging_deer.jpg":      processImage,
