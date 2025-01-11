@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-06 18:36:05 krylon>
+// Time-stamp: <2025-01-11 17:50:35 krylon>
 
 package database
 
@@ -86,5 +86,56 @@ SELECT
     hit_cnt
 FROM blacklist
 ORDER BY hit_cnt DESC
+`,
+	query.MetaAdd: `
+INSERT INTO meta (file_id, timestamp, content, meta)
+VALUES           (      ?,         ?,       ?,    ?)
+RETURNING id
+`,
+	query.MetaGetByFile: `
+SELECT
+    id,
+    timestamp,
+    content,
+    meta
+FROM meta
+WHERE file_id = ?
+`,
+	query.MetaGetByRoot: `
+SELECT
+    m.id,
+    m.file_id,
+    m.timestamp,
+    m.content,
+    m.meta,
+    f.path,
+    f.mime_type,
+    f.ctime
+FROM meta m
+INNER JOIN file f ON m.file_id = f.id
+INNER JOIN root r ON f.root_id = r.id
+WHERE r.id = ?
+ORDER BY f.path
+`,
+	query.MetaGetAll: `
+SELECT
+    m.id,
+    m.file_id,
+    m.timestamp,
+    m.content,
+    m.meta,
+    f.root_id,
+    f.path,
+    f.mime_type,
+    f.ctime
+FROM meta m
+INNER JOIN file f ON m.file_id = f.id
+`,
+	query.MetaUpdate: `
+UPDATE meta SET
+    timestamp = ?,
+    content = ?,
+    meta = ?
+WHERE id = ?
 `,
 }

@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-10 22:22:46 krylon>
+// Time-stamp: <2025-01-11 17:28:27 krylon>
 
 package database
 
@@ -47,6 +47,12 @@ CREATE TABLE meta (
     timestamp	INTEGER NOT NULL,
     content	TEXT NOT NULL DEFAULT '',
     meta	TEXT NOT NULL DEFAULT '',
+    CHECK (json_valid(meta)),
+    FOREIGN KEY (file_id) REFERENCES file (id)
+        ON UPDATE RESTRICT
+        ON DELETE CASCADE
 ) STRICT
 `,
+	"CREATE INDEX meta_time_idx ON meta (timestamp)",
+	"CREATE INDEX meta_meta_idx ON meta (meta <> '')",
 }

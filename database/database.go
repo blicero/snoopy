@@ -2,13 +2,14 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-07 12:05:37 krylon>
+// Time-stamp: <2025-01-11 17:53:21 krylon>
 
 // Package database provides the persistence layer for the application.
 package database
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -1624,3 +1625,229 @@ EXEC_QUERY:
 
 	return items, nil
 } // func (db *Database) BlacklistGetAll() ([]blacklist.Item, error)
+
+// MetaAdd adds metadata for a specific File to the database
+func (db *Database) MetaAdd(m *model.FileMeta) error {
+	const qid query.ID = query.MetaAdd
+	var (
+		err      error
+		msg      string
+		stmt     *sql.Stmt
+		tx       *sql.Tx
+		status   bool
+		buf      []byte
+		metaJSON string
+	)
+
+	if buf, err = json.Marshal(m.Meta); err != nil {
+		db.log.Printf("[ERROR] Cannot convert Metadata to JSON: %s\n",
+			err.Error())
+	}
+
+	metaJSON = string(buf)
+
+	if stmt, err = db.getQuery(qid); err != nil {
+		db.log.Printf("[ERROR] Cannot prepare query %s: %s\n",
+			qid,
+			err.Error())
+		return err
+	} else if db.tx != nil {
+		tx = db.tx
+	} else {
+		// db.log.Printf("[INFO] Start ad-hoc transaction for adding Feed %s\n",
+		// 	f.Title)
+	BEGIN_AD_HOC:
+		if tx, err = db.db.Begin(); err != nil {
+			if worthARetry(err) {
+				waitForRetry()
+				goto BEGIN_AD_HOC
+			} else {
+				msg = fmt.Sprintf("Error starting transaction: %s\n",
+					err.Error())
+				db.log.Printf("[ERROR] %s\n", msg)
+				return errors.New(msg)
+			}
+
+		} else {
+			defer func() {
+				var err2 error
+				if status {
+					if err2 = tx.Commit(); err2 != nil {
+						db.log.Printf("[ERROR] Failed to commit ad-hoc transaction: %s\n",
+							err2.Error())
+					}
+				} else if err2 = tx.Rollback(); err2 != nil {
+					db.log.Printf("[ERROR] Rollback of ad-hoc transaction failed: %s\n",
+						err2.Error())
+				}
+			}()
+		}
+	}
+
+	stmt = tx.Stmt(stmt)
+	var rows *sql.Rows
+
+EXEC_QUERY:
+	if rows, err = stmt.Query(m.FileID, m.Timestamp.Unix(), m.Content, metaJSON); err != nil {
+		if worthARetry(err) {
+			waitForRetry()
+			goto EXEC_QUERY
+		} else {
+			err = fmt.Errorf("Cannot add Metadata for file %d to database: %s",
+				m.FileID,
+				err.Error())
+			db.log.Printf("[ERROR] %s\n", err.Error())
+			return err
+		}
+	} else {
+		var id int64
+
+		defer rows.Close()
+
+		if !rows.Next() {
+			// CANTHAPPEN
+			db.log.Printf("[ERROR] Query %s did not return a value\n",
+				qid)
+			return fmt.Errorf("Query %s did not return a value", qid)
+		} else if err = rows.Scan(&id); err != nil {
+			msg = fmt.Sprintf("Failed to get ID for newly added Metadata for File %d: %s",
+				m.FileID,
+				err.Error())
+			db.log.Printf("[ERROR] %s\n", msg)
+			return errors.New(msg)
+		}
+
+		m.ID = id
+		status = true
+		return nil
+	}
+} // func (db *Database) MetaAdd(m *model.FileMeta) error
+
+// MetaGetByFile fetches the metadata of the given File, if it exists.
+func (db *Database) MetaGetByFile(f *model.File) (*model.FileMeta, error) {
+	const qid query.ID = query.MetaGetByFile
+	var (
+		err  error
+		msg  string
+		stmt *sql.Stmt
+	)
+
+	if stmt, err = db.getQuery(qid); err != nil {
+		db.log.Printf("[ERROR] Cannot prepare query %s: %s\n",
+			qid,
+			err.Error())
+		return nil, err
+	} else if db.tx != nil {
+		stmt = db.tx.Stmt(stmt)
+	}
+
+	var rows *sql.Rows
+
+EXEC_QUERY:
+	if rows, err = stmt.Query(f.ID); err != nil {
+		if worthARetry(err) {
+			waitForRetry()
+			goto EXEC_QUERY
+		}
+
+		return nil, err
+	}
+
+	defer rows.Close() // nolint: errcheck,gosec
+
+	if rows.Next() {
+		var (
+			timestamp int64
+			jMeta     string
+			m         = &model.FileMeta{FileID: f.ID}
+		)
+
+		if err = rows.Scan(&m.ID, &timestamp, &m.Content, &jMeta); err != nil {
+			msg = fmt.Sprintf("Error scanning row for FileMeta of File %d: %s",
+				f.ID,
+				err.Error())
+			db.log.Printf("[ERROR] %s\n", msg)
+			return nil, errors.New(msg)
+		}
+
+		m.Timestamp = time.Unix(timestamp, 0)
+
+		if err = json.Unmarshal([]byte(jMeta), &m.Meta); err != nil {
+			db.log.Printf("[ERROR] Failed to parse JSON of Metadata for File %d: %s\n",
+				f.ID,
+				err.Error())
+			return nil, err
+		}
+
+		return m, nil
+	}
+
+	db.log.Printf("[TRACE] Metadata of File %d was not found in database\n", f.ID)
+	return nil, nil
+} // func (db *Database) MetaGetByFile(f *model.File) (*model.FileMeta, error)
+
+// MetaGetByRoot loads the metadata of all Files that belong to the given Root.
+func (db *Database) MetaGetByRoot(r *model.Root) ([]*model.FileMeta, error) {
+	const qid query.ID = query.MetaGetByRoot
+	var (
+		err  error
+		msg  string
+		stmt *sql.Stmt
+	)
+
+	if stmt, err = db.getQuery(qid); err != nil {
+		db.log.Printf("[ERROR] Cannot prepare query %s: %s\n",
+			qid,
+			err.Error())
+		return nil, err
+	} else if db.tx != nil {
+		stmt = db.tx.Stmt(stmt)
+	}
+
+	var rows *sql.Rows
+
+EXEC_QUERY:
+	if rows, err = stmt.Query(r.ID); err != nil {
+		if worthARetry(err) {
+			waitForRetry()
+			goto EXEC_QUERY
+		}
+
+		return nil, err
+	}
+
+	defer rows.Close() // nolint: errcheck,gosec
+	var results = make([]*model.FileMeta, 0, 64)
+
+	for rows.Next() {
+		var (
+			timestamp, ctime int64
+			jMeta            string
+			f                = &model.File{RootID: r.ID}
+			m                = new(model.FileMeta)
+		)
+
+		if err = rows.Scan(&m.ID, &m.FileID, &m.Content, &jMeta, &f.Path, &f.Type, &ctime); err != nil {
+			msg = fmt.Sprintf("Error scanning row for Metadata: %s",
+				err.Error())
+			db.log.Printf("[ERROR] %s\n", msg)
+			return nil, errors.New(msg)
+		}
+
+		f.CTime = time.Unix(ctime, 0)
+		m.Timestamp = time.Unix(timestamp, 0)
+		f.ID = m.FileID
+		m.F = f
+
+		if err = json.Unmarshal([]byte(jMeta), &m.Meta); err != nil {
+			db.log.Printf("[ERROR] Failed to parse JSON of Metadata of File %d: %s\n",
+				m.FileID,
+				err.Error())
+			return nil, err
+		}
+
+		results = append(results, m)
+	}
+
+	return results, nil
+} // func (db *Database) MetaGetByRoot(r *model.Root) ([]*model.FileMeta, error)
