@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-11 18:11:37 krylon>
+// Time-stamp: <2025-01-12 10:39:11 krylon>
 
 package database
 
@@ -58,6 +58,18 @@ SELECT
     ctime
 FROM file
 WHERE root_id = ?
+`,
+	query.FileGetNoMeta: `
+SELECT
+    f.id,
+    f.root_id,
+    f.path,
+    f.mime_type,
+    f.ctime
+FROM file f
+LEFT OUTER JOIN meta m ON f.id = m.file_id
+WHERE m.file_id IS NULL
+ORDER BY f.path
 `,
 	query.FileGetAll: `
 SELECT

@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-11 18:11:46 krylon>
+// Time-stamp: <2025-01-12 10:32:02 krylon>
 
 //go:generate stringer -type=ID
 
@@ -27,6 +27,7 @@ const (
 	FileGetByPath
 	FileGetByPattern
 	FileGetByRoot
+	FileGetNoMeta
 	FileGetAll
 	BlacklistAdd
 	BlacklistHit
