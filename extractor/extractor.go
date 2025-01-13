@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 08. 01. 2025 by Benjamin Walkenhorst
 // (c) 2025 Benjamin Walkenhorst
-// Time-stamp: <2025-01-11 17:20:28 krylon>
+// Time-stamp: <2025-01-13 15:43:47 krylon>
 
 // Package extractor deals with extracting (hence the name - duh!) searchable
 // metadata from the files the Walker has found.
@@ -15,6 +15,8 @@ import (
 	"os"
 	"runtime"
 	"strconv"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/blicero/snoopy/common"
@@ -52,9 +54,11 @@ var workers = map[string]probe{
 // Extractor wraps the handling of various file types to extract searchable
 // metadata / content from.
 type Extractor struct {
-	log      *log.Logger
-	pool     *database.Pool
-	handlers map[string]probe
+	log       *log.Logger
+	pool      *database.Pool
+	handlers  map[string]probe
+	active    atomic.Bool
+	workerCnt int
 }
 
 // New creates a new Extractor.
@@ -62,7 +66,8 @@ func New() (*Extractor, error) {
 	var (
 		err error
 		ex  = &Extractor{
-			handlers: maps.Clone(workers),
+			handlers:  maps.Clone(workers),
+			workerCnt: runtime.NumCPU(),
 		}
 	)
 
@@ -76,6 +81,127 @@ func New() (*Extractor, error) {
 
 	return ex, nil
 } // func New() (*Extractor, error)
+
+// IsActive returns the Extractor's active flag
+func (ex *Extractor) IsActive() bool {
+	return ex.active.Load()
+} // func (ex *Extractor) IsActive() bool
+
+// Stop clears the Extractor's active flag
+func (ex *Extractor) Stop() {
+	ex.active.Store(false)
+} // func (ex *Extractor) Stop()
+
+// Run attempts to process all Files in the database that do not have up-to-date
+// Metadata.
+func (ex *Extractor) Run() {
+	ex.active.Store(true)
+	defer ex.active.Store(false)
+
+	var (
+		err          error
+		db           *database.Database
+		files        []*model.File
+		outdatedMeta []*model.FileMeta
+		q            chan *model.File
+		wg           sync.WaitGroup
+	)
+
+	q = make(chan *model.File)
+	wg.Add(ex.workerCnt)
+
+	for i := 0; i < ex.workerCnt; i++ {
+		go ex.worker(q, &wg)
+	}
+
+	db = ex.pool.Get()
+	defer ex.pool.Put(db)
+
+	if files, err = db.FileGetNoMeta(); err != nil {
+		ex.log.Printf("[ERROR] Failed to get Files without Metadata: %s\n",
+			err.Error())
+		close(q)
+		return
+	} else if outdatedMeta, err = db.MetaGetOutdated(); err != nil {
+		ex.log.Printf("[ERROR] Failed to load outdated Metadata: %s\n",
+			err.Error())
+		close(q)
+		return
+	}
+
+	for _, f := range files {
+		q <- f
+	}
+
+	for _, m := range outdatedMeta {
+		q <- m.F
+	}
+
+	close(q)
+	wg.Wait()
+
+} // func (ex *Extractor) Run()
+
+func (ex *Extractor) worker(q <-chan *model.File, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	var ticker = time.NewTicker(time.Second)
+	defer ticker.Stop()
+
+	for ex.IsActive() {
+		var (
+			f  *model.File
+			ok bool
+		)
+		select {
+		case <-ticker.C:
+			continue
+		case f, ok = <-q:
+			if !ok {
+				return
+			}
+
+			// Process file
+			var (
+				err error
+				m   *model.FileMeta
+			)
+
+			if m, err = ex.Process(f); err != nil {
+				ex.log.Printf("[ERROR] Failed to extract Metadata from File %s (%d): %s\n",
+					f.Path,
+					f.ID,
+					err.Error())
+				continue
+			} else if err = ex.saveMeta(m); err != nil {
+				ex.log.Printf("[ERROR] Failed to save Metadata for File %s (%d): %s\n",
+					f.Path,
+					f.ID,
+					err.Error())
+			}
+		}
+	}
+} // func (ex *Extractor) worker(q <- chan *model.File, wg *sync.WaitGroup)
+
+func (ex *Extractor) saveMeta(m *model.FileMeta) error {
+	var (
+		err error
+		db  *database.Database
+	)
+
+	db = ex.pool.Get()
+	defer ex.pool.Put(db)
+
+	if err = db.MetaUpsert(m); err != nil {
+		ex.log.Printf("[ERROR] Failed UPSERT Metadata for File %s (%d): %s\n",
+			m.F.Path,
+			m.FileID,
+			err.Error())
+		return err
+	}
+
+	return nil
+} // func (ex *Extractor) saveMeta(m *model.FileMeta) error
 
 // Process attempts to extract usable information from a file to use in a
 // search index.
@@ -98,6 +224,8 @@ func (ex *Extractor) Process(f *model.File) (*model.FileMeta, error) {
 			err.Error())
 		return nil, err
 	}
+
+	meta.F = f
 
 	return meta, nil
 } // func (ex *Extractor) Process(f *model.File) (*model.FileMeta, error)
@@ -123,7 +251,6 @@ func processPlaintext(f *model.File) (*model.FileMeta, error) {
 		Timestamp: time.Now(),
 		Content:   string(raw),
 		Meta:      make(map[string]string),
-		F:         f,
 	}
 
 	return meta, nil
@@ -150,7 +277,6 @@ func processAudio(f *model.File) (*model.FileMeta, error) {
 	meta = &model.FileMeta{
 		FileID:    f.ID,
 		Timestamp: time.Now(),
-		F:         f,
 	}
 
 	meta.Meta = map[string]string{
@@ -171,7 +297,6 @@ func processImage(f *model.File) (*model.FileMeta, error) {
 		meta = &model.FileMeta{
 			FileID:    f.ID,
 			Timestamp: time.Now(),
-			F:         f,
 		}
 	)
 
