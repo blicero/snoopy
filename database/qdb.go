@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-12 10:39:11 krylon>
+// Time-stamp: <2025-01-13 15:20:32 krylon>
 
 package database
 
@@ -159,5 +159,15 @@ SELECT
 FROM meta m
 INNER JOIN file f ON m.file_id = f.id
 ORDER BY f.path
+`,
+	query.MetaUpsert: `
+INSERT INTO meta (file_id, timestamp, content, meta)
+VALUES           (      ?,         ?,       ?,    ?)
+ON CONFLICT (file_id) DO UPDATE SET
+    timestamp = excluded.timestamp,
+    content = excluded.content,
+    meta = meta.content
+WHERE file_id = excluded.file_id
+RETURNING id
 `,
 }
