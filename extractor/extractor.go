@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 08. 01. 2025 by Benjamin Walkenhorst
 // (c) 2025 Benjamin Walkenhorst
-// Time-stamp: <2025-01-13 15:43:47 krylon>
+// Time-stamp: <2025-01-14 06:18:51 krylon>
 
 // Package extractor deals with extracting (hence the name - duh!) searchable
 // metadata from the files the Walker has found.
@@ -10,11 +10,17 @@ package extractor
 
 import (
 	"errors"
+	"fmt"
+	"io"
 	"log"
 	"maps"
+	"math/rand"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -214,9 +220,9 @@ func (ex *Extractor) Process(f *model.File) (*model.FileMeta, error) {
 	)
 
 	if w, ok = ex.handlers[f.Type]; !ok {
-		ex.log.Printf("[INFO] No probe for %s (%s) was found.\n",
-			f.Path,
-			f.Type)
+		// ex.log.Printf("[INFO] No probe for %s (%s) was found.\n",
+		// 	f.Path,
+		// 	f.Type)
 		return nil, ErrNoProbe
 	} else if meta, err = w(f); err != nil {
 		ex.log.Printf("[ERROR] Failed to extract metadata from %s: %s\n",
@@ -318,5 +324,53 @@ func processImage(f *model.File) (*model.FileMeta, error) {
 		"YResolution": strconv.FormatUint(uint64(im.YResolution), 10),
 	}
 
+	if meta.Content, err = runTesseract(f); err != nil {
+		fmt.Fprintf(
+			os.Stderr,
+			"Failed to extract text using TesseracT OCR engine from %s: %s\n",
+			f.Path,
+			err.Error())
+		meta.Content = ""
+	}
+
 	return meta, nil
 } // func processImage(f *model.File) (*model.FileMeta, error)
+
+func runTesseract(f *model.File) (string, error) {
+	// TODO Pipe the output of tesseract(1) instead of using a temporary file?
+	//	If not, at least remove the output file
+	var (
+		err     error
+		cmd     *exec.Cmd
+		fh      *os.File
+		bld     strings.Builder
+		outfile string
+		rnd     uint32
+	)
+
+	rnd = rand.Uint32()
+	outfile = filepath.Join(
+		os.TempDir(),
+		fmt.Sprintf("%08x", rnd),
+	)
+
+	cmd = exec.Command("nice", "tesseract", f.Path, outfile)
+
+	if err = cmd.Run(); err != nil {
+		return "", err
+	}
+
+	defer os.Remove(outfile) // nolint: errcheck
+
+	if fh, err = os.Open(outfile); err != nil {
+		return "", err
+	}
+
+	defer fh.Close()
+
+	if _, err = io.Copy(&bld, fh); err != nil {
+		return "", err
+	}
+
+	return bld.String(), nil
+} // func runTesseract(f *model.File) (string, error)
