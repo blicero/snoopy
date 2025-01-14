@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 31. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-07 18:36:11 krylon>
+// Time-stamp: <2025-01-13 18:12:46 krylon>
 
 package ui
 
@@ -22,6 +22,7 @@ func (g *SWin) initMenu() error {
 		fmItem, emItem                      *gtk.MenuItem
 		rootAddItem, rootScanItem, quitItem *gtk.MenuItem
 		prefItem, loadViewItem              *gtk.MenuItem
+		metaItem                            *gtk.MenuItem
 	)
 
 	// Step 1 Create the menus and items
@@ -62,6 +63,10 @@ func (g *SWin) initMenu() error {
 		g.log.Printf("[ERROR] Failed to create Menu Item _Load View data: %s\n",
 			err.Error())
 		return err
+	} else if metaItem, err = gtk.MenuItemNewWithMnemonic("Scan for _Metadata"); err != nil {
+		g.log.Printf("[ERROR] Failed to create Menu Item \"Scan for _Metadata\": %s\n",
+			err.Error())
+		return err
 	}
 
 	// Step 2 Assemble the menus and add them to the menubar
@@ -69,6 +74,7 @@ func (g *SWin) initMenu() error {
 	fmItem.SetSubmenu(fileMenu)
 	fileMenu.Append(rootAddItem)
 	fileMenu.Append(rootScanItem)
+	fileMenu.Append(metaItem)
 	fileMenu.Append(quitItem)
 
 	emItem.SetSubmenu(editMenu)
@@ -82,6 +88,7 @@ func (g *SWin) initMenu() error {
 	quitItem.Connect("activate", g.quit)
 	rootAddItem.Connect("activate", g.handleAddRoot)
 	rootScanItem.Connect("activate", g.handleScanRoot)
+	metaItem.Connect("activate", g.lookForMetadata)
 
 	loadViewItem.Connect("activate", g.loadViewData)
 

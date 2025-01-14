@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 30. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-07 19:56:42 krylon>
+// Time-stamp: <2025-01-13 18:12:13 krylon>
 
 package ui
 
@@ -17,6 +17,7 @@ import (
 	"github.com/blicero/snoopy/blacklist"
 	"github.com/blicero/snoopy/common"
 	"github.com/blicero/snoopy/database"
+	"github.com/blicero/snoopy/extractor"
 	"github.com/blicero/snoopy/logdomain"
 	"github.com/blicero/snoopy/model"
 	"github.com/blicero/snoopy/walker"
@@ -40,6 +41,7 @@ type tabContent struct {
 type SWin struct {
 	pool      *database.Pool
 	scanner   *walker.Walker
+	probe     *extractor.Extractor
 	lock      sync.RWMutex // nolint: unused,deadcode,structcheck
 	log       *log.Logger
 	win       *gtk.Window
@@ -65,6 +67,10 @@ func Create() (*SWin, error) {
 		return nil, err
 	} else if g.scanner, err = walker.New(); err != nil {
 		g.log.Printf("[ERROR] Failed to create Walker: %s\n",
+			err.Error())
+		return nil, err
+	} else if g.probe, err = extractor.New(); err != nil {
+		g.log.Printf("[ERROR] Failed to create Extractor: %s\n",
 			err.Error())
 		return nil, err
 	}
@@ -704,3 +710,20 @@ ERROR:
 	g.logError(err.Error())
 	return nil, err
 } // func (g *SWin) mkRootContextMenu(path *gtk.TreePath, root *model.Root) (*gtk.Menu, error)
+
+func (g *SWin) lookForMetadata() {
+	if g.probe.IsActive() {
+		g.displayMsg("Extractor is already active")
+		return
+	}
+
+	go func() {
+		defer func() {
+			if ex := recover(); ex != nil {
+				g.logError(fmt.Sprintf("Panic in Extractor: %#v\n", ex))
+			}
+		}()
+		defer g.displayMsg("Extractor is finished")
+		g.probe.Run()
+	}()
+} // func (g *SWin) lookForMetadata()
