@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 08. 01. 2025 by Benjamin Walkenhorst
 // (c) 2025 Benjamin Walkenhorst
-// Time-stamp: <2025-01-14 06:18:51 krylon>
+// Time-stamp: <2025-01-14 18:28:14 krylon>
 
 // Package extractor deals with extracting (hence the name - duh!) searchable
 // metadata from the files the Walker has found.
@@ -25,6 +25,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/blicero/krylib"
 	"github.com/blicero/snoopy/common"
 	"github.com/blicero/snoopy/database"
 	"github.com/blicero/snoopy/logdomain"
@@ -44,6 +45,35 @@ var (
 	ErrTooLarge = errors.New("File is too large")
 	ErrNoProbe  = errors.New("No matching probe was found for the given type")
 )
+
+var (
+	tesseract string
+	pdf2txt   string
+)
+
+func init() {
+	var err error
+
+	if tesseract, err = exec.LookPath("tesseract"); err != nil {
+		tesseract = ""
+		fmt.Fprintf(
+			os.Stderr,
+			"Failed to look up tesseract: %s\n",
+			err.Error())
+	} else {
+		fmt.Printf("Using tesseract at %s\n", tesseract)
+	}
+
+	if pdf2txt, err = exec.LookPath("pdf2txt"); err != nil {
+		pdf2txt = ""
+		fmt.Fprintf(
+			os.Stderr,
+			"Failed to look up pdf2txt: %s\n",
+			err.Error())
+	} else {
+		fmt.Printf("Using pdf2txt at %s\n", pdf2txt)
+	}
+} // func init()
 
 type probe func(*model.File) (*model.FileMeta, error)
 
@@ -236,6 +266,10 @@ func (ex *Extractor) Process(f *model.File) (*model.FileMeta, error) {
 	return meta, nil
 } // func (ex *Extractor) Process(f *model.File) (*model.FileMeta, error)
 
+func processPdf(f *model.File) (*model.FileMeta, error) {
+	return nil, krylib.ErrNotImplemented
+} // func processPdf(f *model.File) (*model.FileMeta, error)
+
 func processPlaintext(f *model.File) (*model.FileMeta, error) {
 	var (
 		err  error
@@ -348,13 +382,17 @@ func runTesseract(f *model.File) (string, error) {
 		rnd     uint32
 	)
 
+	if tesseract == "" {
+		return "", nil
+	}
+
 	rnd = rand.Uint32()
 	outfile = filepath.Join(
 		os.TempDir(),
-		fmt.Sprintf("%08x", rnd),
+		fmt.Sprintf("snoopy_tesseract_%08x", rnd),
 	)
 
-	cmd = exec.Command("nice", "tesseract", f.Path, outfile)
+	cmd = exec.Command("nice", tesseract, f.Path, outfile)
 
 	if err = cmd.Run(); err != nil {
 		return "", err
@@ -374,3 +412,44 @@ func runTesseract(f *model.File) (string, error) {
 
 	return bld.String(), nil
 } // func runTesseract(f *model.File) (string, error)
+
+func runPdf2Txt(f *model.File) (string, error) {
+	var (
+		err     error
+		cmd     *exec.Cmd
+		fh      *os.File
+		bld     strings.Builder
+		outfile string
+		rnd     uint32
+	)
+
+	if pdf2txt == "" {
+		return "", nil
+	}
+
+	rnd = rand.Uint32()
+	outfile = filepath.Join(
+		os.TempDir(),
+		fmt.Sprintf("snoopy_pdf2txt_%08x", rnd),
+	)
+
+	cmd = exec.Command("nice", pdf2txt, f.Path, outfile)
+
+	if err = cmd.Run(); err != nil {
+		return "", err
+	}
+
+	defer os.Remove(outfile) // nolint: errcheck
+
+	if fh, err = os.Open(outfile); err != nil {
+		return "", err
+	}
+
+	defer fh.Close()
+
+	if _, err = io.Copy(&bld, fh); err != nil {
+		return "", err
+	}
+
+	return bld.String(), nil
+} // func runPdf2Txt(f *model.File) (string, error)
