@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 08. 01. 2025 by Benjamin Walkenhorst
 // (c) 2025 Benjamin Walkenhorst
-// Time-stamp: <2025-01-15 14:51:22 krylon>
+// Time-stamp: <2025-01-15 18:13:39 krylon>
 
 // Package extractor deals with extracting (hence the name - duh!) searchable
 // metadata from the files the Walker has found.
@@ -204,10 +204,12 @@ func (ex *Extractor) worker(q <-chan *model.File, wg *sync.WaitGroup) {
 			)
 
 			if m, err = ex.Process(f); err != nil {
-				ex.log.Printf("[ERROR] Failed to extract Metadata from File %s (%d): %s\n",
-					f.Path,
-					f.ID,
-					err.Error())
+				if err != ErrNoProbe {
+					ex.log.Printf("[ERROR] Failed to extract Metadata from File %s (%d): %s\n",
+						f.Path,
+						f.ID,
+						err.Error())
+				}
 				continue
 			} else if err = ex.saveMeta(m); err != nil {
 				ex.log.Printf("[ERROR] Failed to save Metadata for File %s (%d): %s\n",
@@ -360,16 +362,14 @@ func processImage(f *model.File) (*model.FileMeta, error) {
 
 	defer fh.Close() // nolint: errcheck
 
-	if im, err = imagemeta.Decode(fh); err != nil {
-		return nil, err
-	}
-
-	meta.Meta = map[string]string{
-		"Date":        im.GPS.Date().Format(common.TimestampFormat),
-		"Latitude":    strconv.FormatFloat(im.GPS.Latitude(), 'f', -1, 32),
-		"Longitude":   strconv.FormatFloat(im.GPS.Longitude(), 'f', -1, 32),
-		"XResolution": strconv.FormatUint(uint64(im.XResolution), 10),
-		"YResolution": strconv.FormatUint(uint64(im.YResolution), 10),
+	if im, err = imagemeta.Decode(fh); err == nil {
+		meta.Meta = map[string]string{
+			"Date":        im.GPS.Date().Format(common.TimestampFormat),
+			"Latitude":    strconv.FormatFloat(im.GPS.Latitude(), 'f', -1, 32),
+			"Longitude":   strconv.FormatFloat(im.GPS.Longitude(), 'f', -1, 32),
+			"XResolution": strconv.FormatUint(uint64(im.XResolution), 10),
+			"YResolution": strconv.FormatUint(uint64(im.YResolution), 10),
+		}
 	}
 
 	if meta.Content, err = runTesseract(f); err != nil {
