@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 08. 01. 2025 by Benjamin Walkenhorst
 // (c) 2025 Benjamin Walkenhorst
-// Time-stamp: <2025-01-14 18:28:14 krylon>
+// Time-stamp: <2025-01-15 14:51:22 krylon>
 
 // Package extractor deals with extracting (hence the name - duh!) searchable
 // metadata from the files the Walker has found.
@@ -25,7 +25,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/blicero/krylib"
 	"github.com/blicero/snoopy/common"
 	"github.com/blicero/snoopy/database"
 	"github.com/blicero/snoopy/logdomain"
@@ -78,13 +77,14 @@ func init() {
 type probe func(*model.File) (*model.FileMeta, error)
 
 var workers = map[string]probe{
-	"image/jpeg": processImage,
-	"image/png":  processImage,
-	"image/gif":  processImage,
-	"audio/mpeg": processAudio,
-	"audio/ogg":  processAudio,
-	"audio/mp4":  processAudio,
-	"text/plain": processPlaintext,
+	"image/jpeg":      processImage,
+	"image/png":       processImage,
+	"image/gif":       processImage,
+	"audio/mpeg":      processAudio,
+	"audio/ogg":       processAudio,
+	"audio/mp4":       processAudio,
+	"text/plain":      processPlaintext,
+	"application/pdf": processPdf,
 }
 
 // Extractor wraps the handling of various file types to extract searchable
@@ -267,7 +267,21 @@ func (ex *Extractor) Process(f *model.File) (*model.FileMeta, error) {
 } // func (ex *Extractor) Process(f *model.File) (*model.FileMeta, error)
 
 func processPdf(f *model.File) (*model.FileMeta, error) {
-	return nil, krylib.ErrNotImplemented
+	var (
+		err  error
+		meta = &model.FileMeta{
+			FileID:    f.ID,
+			F:         f,
+			Timestamp: time.Now(),
+			Meta:      make(map[string]string),
+		}
+	)
+
+	if meta.Content, err = runPdf2Txt(f); err != nil {
+		return nil, err
+	}
+
+	return meta, nil
 } // func processPdf(f *model.File) (*model.FileMeta, error)
 
 func processPlaintext(f *model.File) (*model.FileMeta, error) {
@@ -398,6 +412,7 @@ func runTesseract(f *model.File) (string, error) {
 		return "", err
 	}
 
+	outfile = outfile + ".txt"
 	defer os.Remove(outfile) // nolint: errcheck
 
 	if fh, err = os.Open(outfile); err != nil {
@@ -415,41 +430,22 @@ func runTesseract(f *model.File) (string, error) {
 
 func runPdf2Txt(f *model.File) (string, error) {
 	var (
-		err     error
-		cmd     *exec.Cmd
-		fh      *os.File
-		bld     strings.Builder
-		outfile string
-		rnd     uint32
+		err            error
+		cmd            *exec.Cmd
+		stdout, stderr strings.Builder
 	)
 
 	if pdf2txt == "" {
 		return "", nil
 	}
 
-	rnd = rand.Uint32()
-	outfile = filepath.Join(
-		os.TempDir(),
-		fmt.Sprintf("snoopy_pdf2txt_%08x", rnd),
-	)
-
-	cmd = exec.Command("nice", pdf2txt, f.Path, outfile)
+	cmd = exec.Command("nice", pdf2txt, f.Path)
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
 
 	if err = cmd.Run(); err != nil {
 		return "", err
 	}
 
-	defer os.Remove(outfile) // nolint: errcheck
-
-	if fh, err = os.Open(outfile); err != nil {
-		return "", err
-	}
-
-	defer fh.Close()
-
-	if _, err = io.Copy(&bld, fh); err != nil {
-		return "", err
-	}
-
-	return bld.String(), nil
+	return stdout.String(), nil
 } // func runPdf2Txt(f *model.File) (string, error)
