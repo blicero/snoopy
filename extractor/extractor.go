@@ -2,13 +2,14 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 08. 01. 2025 by Benjamin Walkenhorst
 // (c) 2025 Benjamin Walkenhorst
-// Time-stamp: <2025-01-15 18:13:39 krylon>
+// Time-stamp: <2025-01-16 18:17:22 krylon>
 
 // Package extractor deals with extracting (hence the name - duh!) searchable
 // metadata from the files the Walker has found.
 package extractor
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -36,6 +37,7 @@ import (
 
 const (
 	bigFile = 64 * 1024 * 1024 // 64 MiB
+	timeout = time.Second * 10
 )
 
 // ErrTooLarge indicates that a file is too large to be processed.
@@ -432,18 +434,44 @@ func runPdf2Txt(f *model.File) (string, error) {
 	var (
 		err            error
 		cmd            *exec.Cmd
+		ctx            context.Context
+		cancel         context.CancelFunc
 		stdout, stderr strings.Builder
 	)
+
+	/* Gefunden unter https://stackoverflow.com/questions/41507805/optional-timeouts-in-golang
+
+	ctx := context.Background()
+	    if timeout > 0 {
+	        var cancel context.CancelFunc
+	        ctx, cancel = context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
+	        defer cancel()
+	    }
+
+	    cmd := exec.CommandContext(ctx, "sleep", "5")
+
+	    if err := cmd.Run(); err != nil {
+	        panic(err)
+	    }
+	*/
 
 	if pdf2txt == "" {
 		return "", nil
 	}
 
-	cmd = exec.Command("nice", pdf2txt, f.Path)
+	ctx = context.Background()
+	ctx, cancel = context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	cmd = exec.CommandContext(ctx, "nice", pdf2txt, f.Path)
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
 	if err = cmd.Run(); err != nil {
+		fmt.Fprintf(
+			os.Stderr,
+			"Error running pdf2txt: %s\n",
+			stderr.String())
 		return "", err
 	}
 
