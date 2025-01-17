@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 31. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-13 18:12:46 krylon>
+// Time-stamp: <2025-01-17 19:14:07 krylon>
 
 package ui
 
@@ -85,11 +85,11 @@ func (g *SWin) initMenu() error {
 	g.menu.Append(emItem)
 
 	// Step 3 Register signal handlers
+
 	quitItem.Connect("activate", g.quit)
 	rootAddItem.Connect("activate", g.handleAddRoot)
 	rootScanItem.Connect("activate", g.handleScanRoot)
-	metaItem.Connect("activate", g.lookForMetadata)
-
+	metaItem.Connect("activate", g.handleExtractorRun)
 	loadViewItem.Connect("activate", g.loadViewData)
 
 	return nil

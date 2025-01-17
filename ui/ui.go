@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 30. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-13 18:12:13 krylon>
+// Time-stamp: <2025-01-17 19:13:09 krylon>
 
 package ui
 
@@ -370,6 +370,25 @@ func (g *SWin) handleScanRoot() {
 	}
 } // func (g *SWin) handleScanRoot()
 
+func (g *SWin) handleExtractorRun() {
+	defer g.log.Println("[DEBUG] handleExtractorRun() exitting")
+	if g.probe.IsActive() {
+		g.displayMsg("Extractor is already active")
+		return
+	}
+
+	go func() {
+		defer func() {
+			if ex := recover(); ex != nil {
+				g.logError(fmt.Sprintf("Panic in Extractor: %#v\n", ex))
+			}
+		}()
+		// defer g.displayMsg("Extractor is finished")
+		g.probe.Run()
+		g.log.Println("[INFO] Extractor is finished")
+	}()
+} // func (g *SWin) handleExtractorRun()
+
 // func (g *SWin) scanFolder() {
 // 	krylib.Trace()
 // 	defer g.log.Printf("[TRACE] EXIT %s\n",
@@ -710,20 +729,3 @@ ERROR:
 	g.logError(err.Error())
 	return nil, err
 } // func (g *SWin) mkRootContextMenu(path *gtk.TreePath, root *model.Root) (*gtk.Menu, error)
-
-func (g *SWin) lookForMetadata() {
-	if g.probe.IsActive() {
-		g.displayMsg("Extractor is already active")
-		return
-	}
-
-	go func() {
-		defer func() {
-			if ex := recover(); ex != nil {
-				g.logError(fmt.Sprintf("Panic in Extractor: %#v\n", ex))
-			}
-		}()
-		defer g.displayMsg("Extractor is finished")
-		g.probe.Run()
-	}()
-} // func (g *SWin) lookForMetadata()
