@@ -2,12 +2,13 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 22. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-07 18:12:23 krylon>
+// Time-stamp: <2025-01-17 18:34:53 krylon>
 
 // Package blacklist provides a filter meant to exclude files from scanning.
 package blacklist
 
 import (
+	"path/filepath"
 	"regexp"
 	"sort"
 	"sync"
@@ -148,6 +149,7 @@ func (b *Blacklist) Less(i, j int) bool { return b.Patterns[i].HitCount() > b.Pa
 func (b *Blacklist) Match(path string) bool {
 	b.lock.RLock()
 	defer b.lock.RUnlock()
+	path = filepath.Base(path)
 	for _, i := range b.Patterns {
 		if i.Match(path) {
 			b.lock.RUnlock()
