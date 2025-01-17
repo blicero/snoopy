@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-07 20:27:16 krylon>
+// Time-stamp: <2025-01-17 17:51:05 krylon>
 
 // Package walker implements the traversal of directories and the processing
 // of the files therein.
@@ -159,7 +159,20 @@ func (w *Walker) Walk(r *model.Root) error {
 		return nil
 	}
 
-	return filepath.WalkDir(r.Path, w.generateVisitorFunc(r))
+	var err error
+
+	if err = filepath.WalkDir(r.Path, w.generateVisitorFunc(r)); err != nil {
+		w.log.Printf("[ERROR] Encountered an error scanning Root %s: %s\n",
+			r.Path,
+			err.Error())
+	} else if err = w.db.RootMarkScan(r, time.Now()); err != nil {
+		w.log.Printf("[ERROR] Failed to update scan timestamp on Root %s (%d): %s\n",
+			r.Path,
+			r.ID,
+			err.Error())
+	}
+
+	return err
 } // func (w *Walker) Walk(r *model.Root) error
 
 func (w *Walker) generateVisitorFunc(r *model.Root) fs.WalkDirFunc {
