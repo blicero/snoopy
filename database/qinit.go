@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-11 17:28:27 krylon>
+// Time-stamp: <2025-01-18 18:36:45 krylon>
 
 package database
 
@@ -40,6 +40,16 @@ CREATE TABLE blacklist (
 ) STRICT
 `,
 	"CREATE INDEX bl_cnt_idx ON blacklist (hit_cnt)",
+	"INSERT INTO blacklist (id,pattern,is_glob,hit_cnt) VALUES (1,'^[.]',0,0)",
+	"INSERT INTO blacklist (id,pattern,is_glob,hit_cnt) VALUES (2,'~$',0,0)",
+	"INSERT INTO blacklist (id,pattern,is_glob,hit_cnt) VALUES (3,'*.bak',1,0)",
+	"INSERT INTO blacklist (id,pattern,is_glob,hit_cnt) VALUES (4,'*.out',1,0)",
+	"INSERT INTO blacklist (id,pattern,is_glob,hit_cnt) VALUES (5,'*.tmp',1,0)",
+	"INSERT INTO blacklist (id,pattern,is_glob,hit_cnt) VALUES (6,'#*',1,0)",
+	"INSERT INTO blacklist (id,pattern,is_glob,hit_cnt) VALUES (7,'bak.*',1,0)",
+	"INSERT INTO blacklist (id,pattern,is_glob,hit_cnt) VALUES (8,'*_string.go',1,0)",
+	"INSERT INTO blacklist (id,pattern,is_glob,hit_cnt) VALUES (9,'*_gen.go',1,0)",
+	"INSERT INTO blacklist (id,pattern,is_glob,hit_cnt) VALUES (10,'*ffjson.go',1,0)",
 	`
 CREATE TABLE meta (
     id		INTEGER PRIMARY KEY,
