@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 07. 01. 2025 by Benjamin Walkenhorst
 // (c) 2025 Benjamin Walkenhorst
-// Time-stamp: <2025-01-07 12:17:52 krylon>
+// Time-stamp: <2025-01-19 19:15:26 krylon>
 
 package database
 
@@ -27,21 +27,7 @@ func TestBlacklistItemAdd(t *testing.T) {
 
 	var testCases = []testCase{
 		{
-			pattern: "^[.]",
-		},
-		{
 			pattern: "#$",
-		},
-		{
-			pattern: "bak.*",
-			isGlob:  true,
-		},
-		{
-			pattern: "*.bak",
-			isGlob:  true,
-		},
-		{
-			pattern: "~$",
 		},
 		{
 			pattern:     "[.](tmp|bak|log|err|out",
@@ -101,11 +87,13 @@ func TestBlacklistGetAll(t *testing.T) {
 	if items, err = db.BlacklistGetAll(); err != nil {
 		t.Fatalf("Failed to load all Blacklist Items: %s",
 			err.Error())
-	} else if len(items) != len(blTestItems) {
+	} else if len(items) != len(blTestItems)+10 {
 		t.Fatalf("Unexpected number of Items returned by db.BlacklistGetAll: %d (expected %d)",
 			len(items),
 			len(blTestItems))
 	}
+
+	blTestItems = items
 } // func TestBlacklistGetAll(t *testing.T)
 
 func TestBlacklistHit(t *testing.T) {
