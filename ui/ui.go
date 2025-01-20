@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 30. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-17 19:13:09 krylon>
+// Time-stamp: <2025-01-20 16:15:31 krylon>
 
 package ui
 
@@ -26,6 +26,21 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 )
 
+//go:generate stringer -type=MsgLevel
+
+type MsgLevel uint8
+
+const (
+	MsgStatusbar MsgLevel = iota
+	MsgDialog
+	MsgLog
+)
+
+type Msg struct {
+	Level   MsgLevel
+	Message string
+}
+
 type tabContent struct {
 	vbox   *gtk.Box
 	sbox   *gtk.Box
@@ -43,6 +58,7 @@ type SWin struct {
 	scanner   *walker.Walker
 	probe     *extractor.Extractor
 	lock      sync.RWMutex // nolint: unused,deadcode,structcheck
+	MsgQ      chan Msg
 	log       *log.Logger
 	win       *gtk.Window
 	mainBox   *gtk.Box
@@ -56,7 +72,9 @@ type SWin struct {
 func Create() (*SWin, error) {
 	var (
 		err error
-		g   = new(SWin)
+		g   = &SWin{
+			MsgQ: make(chan Msg, 5),
+		}
 	)
 
 	if g.log, err = common.GetLogger(logdomain.GUI); err != nil {
@@ -196,15 +214,41 @@ func (g *SWin) Run() {
 		for {
 			time.Sleep(time.Second)
 			cnt++
-			var msg = fmt.Sprintf("%s: Tick #%d",
-				time.Now().Format(common.TimestampFormat),
-				cnt)
-			g.statusbar.Push(666, msg)
+			var msg = Msg{
+				Message: fmt.Sprintf("%s: Tick #%d",
+					time.Now().Format(common.TimestampFormat),
+					cnt),
+				Level: MsgStatusbar,
+			}
+			g.MsgQ <- msg
+			// g.statusbar.Push(666, msg)
 		}
 	}()
 
+	glib.TimeoutAdd(1000, g.checkMsgQ)
+
 	gtk.Main()
 } // func (g *SWin) Run()
+
+func (g *SWin) checkMsgQ() bool {
+	select {
+	case <-time.After(time.Millisecond * 50):
+	case msg := <-g.MsgQ:
+		switch msg.Level {
+		case MsgStatusbar:
+			g.statusbar.Push(666, msg.Message)
+		case MsgDialog:
+			g.displayMsg(msg.Message)
+		case MsgLog:
+			g.log.Printf("[DEBUG] %s\n", msg.Message)
+		default:
+			g.log.Printf("[ERROR] Unknown message type %s\n",
+				msg.Level)
+		}
+	}
+
+	return true
+} // func (g *SWin) checkMsgQ() bool
 
 // nolint: unused
 func (g *SWin) displayMsg(msg string) {
@@ -341,6 +385,9 @@ func (g *SWin) handleAddRoot() {
 				err.Error())
 			return
 		}
+	default:
+		g.log.Printf("[ERROR] Unknown dialog response type: %d\n",
+			res)
 	}
 } // func (g *SWin) handleAddRoot()
 
@@ -380,7 +427,7 @@ func (g *SWin) handleExtractorRun() {
 	go func() {
 		defer func() {
 			if ex := recover(); ex != nil {
-				g.logError(fmt.Sprintf("Panic in Extractor: %#v\n", ex))
+				g.log.Printf("[CRITICAL] Panic in Extractor: %#v\n", ex)
 			}
 		}()
 		// defer g.displayMsg("Extractor is finished")
