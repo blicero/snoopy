@@ -2,11 +2,12 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-02 20:36:00 krylon>
+// Time-stamp: <2025-01-20 16:21:55 krylon>
 
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
@@ -22,9 +23,24 @@ func main() {
 	defer fmt.Println("Bye Bye")
 
 	var (
-		err error
-		win *ui.SWin
+		err  error
+		base string
+		win  *ui.SWin
 	)
+
+	flag.StringVar(&base, "base", common.BaseDir, "Directory to store application-related files in")
+	flag.Parse()
+
+	if base != common.BaseDir {
+		if err = common.SetBaseDir(base); err != nil {
+			fmt.Fprintf(
+				os.Stderr,
+				"ERROR: %s\n",
+				err.Error(),
+			)
+			os.Exit(1)
+		}
+	}
 
 	if win, err = ui.Create(); err != nil {
 		fmt.Fprintf(
