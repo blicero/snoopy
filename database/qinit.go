@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-22 14:41:59 krylon>
+// Time-stamp: <2025-01-22 17:00:40 krylon>
 
 package database
 
@@ -66,6 +66,7 @@ CREATE TABLE meta (
 `,
 	"CREATE INDEX meta_time_idx ON meta (timestamp)",
 	"CREATE INDEX meta_meta_idx ON meta (meta <> '')",
+	"CREATE INDEX meta_content_idx ON meta (content)",
 	`
 CREATE TRIGGER IF NOT EXISTS tr_meta_fts_insert
 AFTER INSERT ON meta
