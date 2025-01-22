@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2025-01-20 17:03:59 krylon>
+# Time-stamp: <2025-01-22 15:32:41 krylon>
 #
 #+TAGS: internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -9,7 +9,7 @@
 #+TODO: MEDITATE(m) PLANNING(p) | SUSPENDED(s)
 #+PRIORITIES: A G D
 
-* Snoopy [2/5]
+* Snoopy [2/6]
   :PROPERTIES:
   :COOKIE_DATA: todo recursive
   :VISIBILITY: children
@@ -19,30 +19,31 @@
   feasible.
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 202 :emphasize t
-   #+CAPTION: Clock summary at [2025-01-20 Mo 17:03]
-   | Headline                             | Time       |           |       |      |
-   |--------------------------------------+------------+-----------+-------+------|
-   | *Total time*                         | *2d 14:13* |           |       |      |
-   |--------------------------------------+------------+-----------+-------+------|
-   | *Snoopy [2/5]*                       | *2d 14:13* |           |       |      |
-   | \_  /Components [1/3]/               |            | /2d 9:09/ |       |      |
-   | \_    Data model [0/0]               |            |           |  0:37 |      |
-   | \_    Database [1/3]                 |            |           |  8:55 |      |
-   | \_      Relative paths               |            |           |       | 2:09 |
-   | \_    Blacklist [0/0]                |            |           |  2:51 |      |
-   | \_    Walker [0/0]                   |            |           | 10:48 |      |
-   | \_    Extractor [0/0]                |            |           | 17:59 |      |
-   | \_    UI [0/1]                       |            |           | 15:59 |      |
-   | \_      Edit Blacklist from GUI      |            |           |       | 0:43 |
-   | \_  /Bugs [1/1]/                     |            | /5:04/    |       |      |
-   | \_    GUI hangs after extractor runs |            |           |  5:04 |      |
+   #+CAPTION: Clock summary at [2025-01-22 Mi 15:32]
+   | Headline                             | Time       |            |       |      |
+   |--------------------------------------+------------+------------+-------+------|
+   | *Total time*                         | *2d 18:39* |            |       |      |
+   |--------------------------------------+------------+------------+-------+------|
+   | *Snoopy [2/6]*                       | *2d 18:39* |            |       |      |
+   | \_  /Components [1/5]/               |            | /2d 13:35/ |       |      |
+   | \_    Data model [0/0]               |            |            |  0:37 |      |
+   | \_    Database [1/3]                 |            |            |  8:55 |      |
+   | \_      Relative paths               |            |            |       | 2:09 |
+   | \_    Blacklist [0/0]                |            |            |  2:51 |      |
+   | \_    Walker [0/0]                   |            |            | 10:48 |      |
+   | \_    Extractor [0/0]                |            |            | 17:59 |      |
+   | \_    UI [0/1]                       |            |            | 15:59 |      |
+   | \_      Edit Blacklist from GUI      |            |            |       | 0:43 |
+   | \_    Searching [0/1]                |            |            |  4:26 |      |
+   | \_  /Bugs [1/1]/                     |            | /5:04/     |       |      |
+   | \_    GUI hangs after extractor runs |            |            |  5:04 |      |
    #+END:
 ** Features [0/0]
    :PROPERTIES:
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
    :END:
-** Components [1/3]
+** Components [1/5]
    :PROPERTIES:
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
@@ -207,6 +208,22 @@
      :LOGBOOK:
      CLOCK: [2025-01-07 Di 17:53]--[2025-01-07 Di 18:36] =>  0:43
      :END:
+*** Searching [0/1]
+    :PROPERTIES:
+    :COOKIE_DATA: todo recursive
+    :VISIBILITY: children
+    :END:
+    :LOGBOOK:
+    CLOCK: [2025-01-22 Mi 14:20]--[2025-01-22 Mi 15:31] =>  1:11
+    CLOCK: [2025-01-20 Mo 20:17]--[2025-01-20 Mo 23:32] =>  3:15
+    :END:
+    This is, after all, the big point of all the effort we have taken up to
+    this point.
+    SQLite has support for fulltext search, so I should be using it, yes?
+**** TODO Ranking results
+     SQLite provides some functionality to build your own ranking method, but
+     nothing I can just use out of the box. I'll have to look into that more
+     deeply.
 ** Bugs [1/1]
    :PROPERTIES:
    :COOKIE_DATA: todo recursive
