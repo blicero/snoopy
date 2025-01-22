@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-18 18:36:45 krylon>
+// Time-stamp: <2025-01-22 14:41:59 krylon>
 
 package database
 
@@ -50,6 +50,7 @@ CREATE TABLE blacklist (
 	"INSERT INTO blacklist (id,pattern,is_glob,hit_cnt) VALUES (8,'*_string.go',1,0)",
 	"INSERT INTO blacklist (id,pattern,is_glob,hit_cnt) VALUES (9,'*_gen.go',1,0)",
 	"INSERT INTO blacklist (id,pattern,is_glob,hit_cnt) VALUES (10,'*ffjson.go',1,0)",
+	"CREATE VIRTUAL TABLE logothek USING fts4(file_id, meta_id, body)",
 	`
 CREATE TABLE meta (
     id		INTEGER PRIMARY KEY,
@@ -65,4 +66,27 @@ CREATE TABLE meta (
 `,
 	"CREATE INDEX meta_time_idx ON meta (timestamp)",
 	"CREATE INDEX meta_meta_idx ON meta (meta <> '')",
+	`
+CREATE TRIGGER IF NOT EXISTS tr_meta_fts_insert
+AFTER INSERT ON meta
+BEGIN
+    INSERT INTO logothek (file_id, meta_id, body)
+    VALUES               (new.file_id, new.id, new.content);
+END;
+`,
+	`
+CREATE TRIGGER IF NOT EXISTS tr_meta_fts_delete
+AFTER DELETE ON meta
+BEGIN
+    DELETE FROM logothek WHERE meta_id = old.id;
+END;
+`,
+	`
+CREATE TRIGGER IF NOT EXISTS tr_meta_fts_update
+AFTER UPDATE OF content ON meta
+BEGIN
+    DELETE FROM logothek WHERE meta_id = old.id;
+    INSERT INTO logothek (file_id, meta_id, body) VALUES (new.file_id, new.id, new.content);
+END;
+`,
 }
