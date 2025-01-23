@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-13 15:20:32 krylon>
+// Time-stamp: <2025-01-23 16:24:01 krylon>
 
 package database
 
@@ -169,5 +169,16 @@ ON CONFLICT (file_id) DO UPDATE SET
     meta = meta.content
 WHERE file_id = excluded.file_id
 RETURNING id
+`,
+	query.MetaSearch: `
+SELECT
+    f.id,
+    f.root_id,
+    f.path,
+    f.mime_type,
+    f.ctime
+FROM logothek l
+INNER JOIN file f ON l.file_id = f.id
+WHERE l.body MATCH ?
 `,
 }

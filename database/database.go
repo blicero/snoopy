@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-13 15:22:43 krylon>
+// Time-stamp: <2025-01-23 16:29:28 krylon>
 
 // Package database provides the persistence layer for the application.
 package database
@@ -2136,3 +2136,56 @@ EXEC_QUERY:
 		return nil
 	}
 } // func (db *Database) MetaUpsert(m *model.FileMeta) error
+
+// MetaSearch searches files using SQLite's fulltext search feature.
+func (db *Database) MetaSearch(qstr string) ([]*model.File, error) {
+	const qid query.ID = query.MetaSearch
+	var (
+		err  error
+		msg  string
+		stmt *sql.Stmt
+	)
+
+	if stmt, err = db.getQuery(qid); err != nil {
+		db.log.Printf("[ERROR] Cannot prepare query %s: %s\n",
+			qid,
+			err.Error())
+		return nil, err
+	} else if db.tx != nil {
+		stmt = db.tx.Stmt(stmt)
+	}
+
+	var rows *sql.Rows
+
+EXEC_QUERY:
+	if rows, err = stmt.Query(qstr); err != nil {
+		if worthARetry(err) {
+			waitForRetry()
+			goto EXEC_QUERY
+		}
+
+		return nil, err
+	}
+
+	defer rows.Close() // nolint: errcheck,gosec
+	var files = make([]*model.File, 0, 64)
+
+	for rows.Next() {
+		var (
+			timestamp int64
+			f         = new(model.File)
+		)
+
+		if err = rows.Scan(&f.ID, &f.RootID, &f.Path, &f.Type, &timestamp); err != nil {
+			msg = fmt.Sprintf("Error scanning row for File: %s",
+				err.Error())
+			db.log.Printf("[ERROR] %s\n", msg)
+			return nil, errors.New(msg)
+		}
+
+		f.CTime = time.Unix(timestamp, 0)
+		files = append(files, f)
+	}
+
+	return files, nil
+} // func (db *Database) MetaSearch(qstr string) ([]*model.File, error)
