@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 30. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-20 16:15:31 krylon>
+// Time-stamp: <2025-01-23 16:53:46 krylon>
 
 package ui
 
@@ -192,6 +192,7 @@ func Create() (*SWin, error) {
 	// Register signal handlers
 	g.win.Connect("destroy", gtk.MainQuit)
 	g.tabs[tiRoot].view.Connect("button-press-event", g.handleRootListClick)
+	g.tabs[tiSearch].search.Connect("activate", g.handleSearchExec)
 
 	g.win.Add(g.mainBox)
 	g.mainBox.PackStart(g.menu, false, false, 0)
