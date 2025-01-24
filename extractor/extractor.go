@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 08. 01. 2025 by Benjamin Walkenhorst
 // (c) 2025 Benjamin Walkenhorst
-// Time-stamp: <2025-01-17 18:28:15 krylon>
+// Time-stamp: <2025-01-24 12:08:49 krylon>
 
 // Package extractor deals with extracting (hence the name - duh!) searchable
 // metadata from the files the Walker has found.
@@ -51,6 +51,7 @@ var (
 	tesseract string
 	pdf2txt   string
 	odt2txt   string
+	docx2txt  string
 )
 
 func init() {
@@ -85,6 +86,16 @@ func init() {
 	} else {
 		fmt.Printf("Using odt2txt at %s\n", odt2txt)
 	}
+
+	if docx2txt, err = exec.LookPath("docx2txt"); err != nil {
+		docx2txt = ""
+		fmt.Fprintf(
+			os.Stderr,
+			"Failed to look up docx2txt: %s\n",
+			err.Error())
+	} else {
+		fmt.Printf("Using docx2txt at %s\n", docx2txt)
+	}
 } // func init()
 
 type probe func(*model.File) (*model.FileMeta, error)
@@ -92,17 +103,18 @@ type probe func(*model.File) (*model.FileMeta, error)
 var workers = map[string]probe{
 	"application/pdf":                         processPdf,
 	"application/vnd.oasis.opendocument.text": processOdt,
-	"audio/mp4":                               processAudio,
-	"audio/mpeg":                              processAudio,
-	"audio/ogg":                               processAudio,
-	"image/bmp":                               processImage,
-	"image/gif":                               processImage,
-	"image/jpeg":                              processImage,
-	"image/png":                               processImage,
-	"image/tiff":                              processImage,
-	"image/webp":                              processImage,
-	"text/plain":                              processPlaintext,
-	"text/plain; charset=utf-8":               processPlaintext,
+	"application/vnd.openxmlformats-officedocument.wordprocessingml.document": processDocx,
+	"audio/mp4":                 processAudio,
+	"audio/mpeg":                processAudio,
+	"audio/ogg":                 processAudio,
+	"image/bmp":                 processImage,
+	"image/gif":                 processImage,
+	"image/jpeg":                processImage,
+	"image/png":                 processImage,
+	"image/tiff":                processImage,
+	"image/webp":                processImage,
+	"text/plain":                processPlaintext,
+	"text/plain; charset=utf-8": processPlaintext,
 }
 
 // Extractor wraps the handling of various file types to extract searchable
@@ -321,6 +333,24 @@ func processOdt(f *model.File) (*model.FileMeta, error) {
 
 	return meta, nil
 } // func processOdt(f *model.File) (*model.FileMeta, error)
+
+func processDocx(f *model.File) (*model.FileMeta, error) {
+	var (
+		err  error
+		meta = &model.FileMeta{
+			FileID:    f.ID,
+			F:         f,
+			Timestamp: time.Now(),
+			Meta:      make(map[string]string),
+		}
+	)
+
+	if meta.Content, err = runDocx2Txt(f); err != nil {
+		return nil, err
+	}
+
+	return meta, nil
+} // func processDocx(f *model.File) (*model.FileMeta, error)
 
 func processPlaintext(f *model.File) (*model.FileMeta, error) {
 	var (
@@ -559,3 +589,51 @@ func runOdt2Txt(f *model.File) (string, error) {
 
 	return stdout.String(), nil
 } // func runOdt2Txt(f *model.File) (string, error)
+
+func runDocx2Txt(f *model.File) (string, error) {
+	var (
+		err            error
+		cmd            *exec.Cmd
+		ctx            context.Context
+		cancel         context.CancelFunc
+		stdout, stderr strings.Builder
+	)
+
+	/* Gefunden unter https://stackoverflow.com/questions/41507805/optional-timeouts-in-golang
+
+	ctx := context.Background()
+	    if timeout > 0 {
+	        var cancel context.CancelFunc
+	        ctx, cancel = context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
+	        defer cancel()
+	    }
+
+	    cmd := exec.CommandContext(ctx, "sleep", "5")
+
+	    if err := cmd.Run(); err != nil {
+	        panic(err)
+	    }
+	*/
+
+	if docx2txt == "" {
+		return "", nil
+	}
+
+	ctx = context.Background()
+	ctx, cancel = context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	cmd = exec.CommandContext(ctx, "nice", docx2txt, f.Path)
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	if err = cmd.Run(); err != nil {
+		fmt.Fprintf(
+			os.Stderr,
+			"Error running odt2txt: %s\n",
+			stderr.String())
+		return "", err
+	}
+
+	return stdout.String(), nil
+} // func runDocx2Txt(f *model.File) (string, error)
