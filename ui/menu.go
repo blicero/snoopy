@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 31. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-17 19:14:07 krylon>
+// Time-stamp: <2025-02-01 16:01:09 krylon>
 
 package ui
 
@@ -21,7 +21,7 @@ func (g *SWin) initMenu() error {
 		fileMenu, editMenu                  *gtk.Menu
 		fmItem, emItem                      *gtk.MenuItem
 		rootAddItem, rootScanItem, quitItem *gtk.MenuItem
-		prefItem, loadViewItem              *gtk.MenuItem
+		prefItem, loadViewItem, pruneItem   *gtk.MenuItem
 		metaItem                            *gtk.MenuItem
 	)
 
@@ -63,6 +63,10 @@ func (g *SWin) initMenu() error {
 		g.log.Printf("[ERROR] Failed to create Menu Item _Load View data: %s\n",
 			err.Error())
 		return err
+	} else if pruneItem, err = gtk.MenuItemNewWithMnemonic("_Prune database"); err != nil {
+		g.log.Printf("[ERROR] Failed to create Menu Item _Prune database: %s\n",
+			err.Error())
+		return err
 	} else if metaItem, err = gtk.MenuItemNewWithMnemonic("Scan for _Metadata"); err != nil {
 		g.log.Printf("[ERROR] Failed to create Menu Item \"Scan for _Metadata\": %s\n",
 			err.Error())
@@ -80,6 +84,7 @@ func (g *SWin) initMenu() error {
 	emItem.SetSubmenu(editMenu)
 	editMenu.Append(loadViewItem)
 	editMenu.Append(prefItem)
+	editMenu.Append(pruneItem)
 
 	g.menu.Append(fmItem)
 	g.menu.Append(emItem)
@@ -91,6 +96,7 @@ func (g *SWin) initMenu() error {
 	rootScanItem.Connect("activate", g.handleScanRoot)
 	metaItem.Connect("activate", g.handleExtractorRun)
 	loadViewItem.Connect("activate", g.loadViewData)
+	pruneItem.Connect("activate", g.handlePrune)
 
 	return nil
 } // func (g *SWin) initMenu() error

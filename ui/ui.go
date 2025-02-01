@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 30. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-23 16:53:46 krylon>
+// Time-stamp: <2025-02-01 15:30:50 krylon>
 
 package ui
 
@@ -28,14 +28,21 @@ import (
 
 //go:generate stringer -type=MsgLevel
 
+// MsgLevel indicates what to do with a Message
 type MsgLevel uint8
 
+// MsgStatusbar - display the message in the statusbar
+// MsgDialog - display the message in a Dialog
+// MsgLog - write the message to the Log
 const (
 	MsgStatusbar MsgLevel = iota
 	MsgDialog
 	MsgLog
 )
 
+// Msg is a message to be displayed in some form to the user.
+// Gtk is not threadsafe, so I send Msg values through a channel, and a timeout
+// in the GUI fetches and displays them regularly.
 type Msg struct {
 	Level   MsgLevel
 	Message string
@@ -52,7 +59,7 @@ type tabContent struct {
 	scr    *gtk.ScrolledWindow
 }
 
-// Swin is wraps up the UI main window, all of its contents, and all associated state.
+// SWin is wraps up the UI main window, all of its contents, and all associated state.
 type SWin struct {
 	pool      *database.Pool
 	scanner   *walker.Walker
@@ -213,7 +220,7 @@ func (g *SWin) Run() {
 	go func() {
 		var cnt = 0
 		for {
-			time.Sleep(time.Second)
+			time.Sleep(time.Second * 5)
 			cnt++
 			var msg = Msg{
 				Message: fmt.Sprintf("%s: Tick #%d",
@@ -777,3 +784,83 @@ ERROR:
 	g.logError(err.Error())
 	return nil, err
 } // func (g *SWin) mkRootContextMenu(path *gtk.TreePath, root *model.Root) (*gtk.Menu, error)
+
+func (g *SWin) handlePrune() {
+	krylib.Trace()
+
+	var (
+		err    error
+		db     *database.Database
+		files  []*model.File
+		status bool
+	)
+
+	db = g.pool.Get()
+	defer g.pool.Put(db)
+
+	if err = db.Begin(); err != nil {
+		g.log.Printf("[ERROR] Failed begin transaction: %s\n",
+			err.Error())
+		return
+	}
+
+	defer func() {
+		var (
+			ex  error
+			msg string
+		)
+
+		if status {
+			if ex = db.Commit(); ex != nil {
+				msg = fmt.Sprintf("Failed to commit database transaction: %s",
+					ex.Error())
+				g.MsgQ <- Msg{Level: MsgDialog, Message: msg}
+			}
+		} else {
+			if ex = db.Rollback(); ex != nil {
+				msg = fmt.Sprintf("Failed to roll back database transaction: %s",
+					ex.Error())
+				g.MsgQ <- Msg{Level: MsgDialog, Message: msg}
+			}
+		}
+	}()
+
+	if files, err = db.FileGetAll(); err != nil {
+		g.MsgQ <- Msg{
+			Level: MsgDialog,
+			Message: fmt.Sprintf("Failed to get all Files from database: %s",
+				err.Error()),
+		}
+		return
+	}
+
+	var cnt = 0
+
+	for _, f := range files {
+		var exist bool
+		if exist, err = krylib.Fexists(f.Path); err != nil {
+			g.log.Printf("[ERROR] Cannot check if File %s exists: %s\n",
+				f.Path,
+				err.Error())
+			continue
+		} else if !exist {
+			g.log.Printf("[DEBUG] Remove %s from database\n",
+				f.Path)
+			if err = db.FileDelete(f); err != nil {
+				var m = Msg{
+					Message: fmt.Sprintf("Failed to delete File %s from database: %s\n",
+						f.Path,
+						err.Error()),
+					Level: MsgDialog,
+				}
+				g.MsgQ <- m
+				return
+			}
+
+			cnt++
+		}
+	}
+
+	g.log.Printf("[INFO] Removed %d Files from database.\n", cnt)
+	status = true
+} // func (g *SWin) handlePrune()
