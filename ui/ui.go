@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 30. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-02-01 15:30:50 krylon>
+// Time-stamp: <2025-02-03 19:05:39 krylon>
 
 package ui
 
@@ -443,74 +443,6 @@ func (g *SWin) handleExtractorRun() {
 		g.log.Println("[INFO] Extractor is finished")
 	}()
 } // func (g *SWin) handleExtractorRun()
-
-// func (g *SWin) scanFolder() {
-// 	krylib.Trace()
-// 	defer g.log.Printf("[TRACE] EXIT %s\n",
-// 		krylib.TraceInfo())
-
-// 	var (
-// 		err error
-// 		dlg *gtk.FileChooserDialog
-// 		res gtk.ResponseType
-// 	)
-
-// 	if dlg, err = gtk.FileChooserDialogNewWith2Buttons(
-// 		"Scan Folder",
-// 		g.win,
-// 		gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
-// 		"Cancel",
-// 		gtk.RESPONSE_CANCEL,
-// 		"OK",
-// 		gtk.RESPONSE_OK,
-// 	); err != nil {
-// 		g.log.Printf("[ERROR] Cannot create FileChooserDialog: %s\n",
-// 			err.Error())
-// 		return
-// 	}
-
-// 	defer dlg.Close()
-
-// 	res = dlg.Run()
-
-// 	switch res {
-// 	case gtk.RESPONSE_CANCEL:
-// 		g.log.Println("[DEBUG] Ha, you almost got me.")
-// 		return
-// 	case gtk.RESPONSE_OK:
-// 		var path string
-// 		if path, err = dlg.GetCurrentFolder(); err != nil {
-// 			g.log.Printf("[ERROR] Cannot get folder from dialog: %s\n",
-// 				err.Error())
-// 			return
-// 		}
-
-// 		go g.scanner.Walk(path) // nolint: errcheck
-// 		glib.TimeoutAdd(1000,
-// 			func() bool {
-// 				var (
-// 					ex   error
-// 					item *gtk.MenuItem
-// 				)
-
-// 				if item, ex = gtk.MenuItemNewWithLabel(path); ex != nil {
-// 					g.log.Printf("[ERROR] Cannot create MenuItem for %q: %s\n",
-// 						path,
-// 						ex.Error())
-// 					return false
-// 				}
-
-// 				item.Connect("activate", func() {
-// 					g.statusbar.Push(666, fmt.Sprintf("Update %s", path))
-// 					go g.scanner.Walk(path) // nolint: errcheck
-// 				})
-
-// 				g.dMenu.Append(item)
-
-// 				return false
-// 			})
-// 	}
-// } // func (g *SWin) scanFolder()
 
 func (g *SWin) loadViewData() {
 	var (
