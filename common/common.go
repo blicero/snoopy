@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 18. 09. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2024-12-22 15:43:55 krylon>
+// Time-stamp: <2025-02-03 19:00:41 krylon>
 
 package common
 
@@ -36,7 +36,7 @@ import (
 // their status.
 const (
 	Debug                    = true
-	Version                  = "0.0.1"
+	Version                  = "0.1.0"
 	AppName                  = "Snoopy"
 	TimestampFormat          = "2006-01-02 15:04:05"
 	TimestampFormatMinute    = "2006-01-02 15:04"
