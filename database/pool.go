@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 07. 06. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2024-12-30 21:01:32 krylon>
+// Time-stamp: <2025-02-03 18:40:31 krylon>
 
 package database
 
@@ -30,13 +30,17 @@ type Pool struct {
 	empty *sync.Cond
 }
 
-// NewPool creates a Pool of database connections.
-// The number of connections to use is given by the
-// parameter cnt.
-func NewPool(cnt int) (*Pool, error) {
+const poolSize = 8
+
+var (
+	thePool  *Pool
+	initPool sync.Once
+)
+
+func makePool(cnt int) (*Pool, error) {
 	var (
 		err  error
-		pool = &Pool{cnt: cnt}
+		pool = &Pool{cnt: poolSize}
 	)
 
 	pool.empty = sync.NewCond(&pool.lock)
@@ -62,6 +66,39 @@ func NewPool(cnt int) (*Pool, error) {
 	}
 
 	return pool, nil
+} // func makePool(cnt int) (*Pool, error)
+
+func makeGlobalPool() {
+	var (
+		err error
+		p   *Pool
+	)
+
+	if p, err = makePool(poolSize); err != nil {
+		panic(err)
+	} else {
+		thePool = p
+	}
+}
+
+// Get returns one connection from the global Pool, blocking if necessary.
+func Get() *Database {
+	initPool.Do(makeGlobalPool)
+
+	return thePool.Get()
+} // func Get() *Database
+
+func Put(db *Database) {
+	thePool.Put(db)
+}
+
+// NewPool creates a Pool of database connections.
+// The number of connections to use is given by the
+// parameter cnt.
+func NewPool(cnt int) (*Pool, error) {
+	initPool.Do(makeGlobalPool)
+
+	return thePool, nil
 } // func NewPool(cnt int) (*Pool, error)
 
 // Close closes all open database connections currently in the pool and empties
@@ -104,7 +141,7 @@ WAIT_FOR_LINK:
 	// Wait for it!!!
 	pool.empty.Wait()
 	goto WAIT_FOR_LINK
-} // func (pool *Pool) Get() *DB
+} // func (pool *Pool) Get() *Database
 
 // GetNoWait returns a DB connection from the pool.
 // If the pool is empty, it creates a new one.

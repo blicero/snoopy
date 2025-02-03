@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 28. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-07 18:22:52 krylon>
+// Time-stamp: <2025-02-03 18:44:18 krylon>
 
 package walker
 
@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/blicero/snoopy/blacklist"
+	"github.com/blicero/snoopy/database"
 	"github.com/blicero/snoopy/model"
 )
 
@@ -25,10 +26,14 @@ func TestCreateWalker(t *testing.T) {
 func TestWalkDirectory(t *testing.T) {
 	var (
 		err error
+		db  *database.Database
 		r   = &model.Root{Path: testRoot}
 	)
 
-	if err = w.db.RootAdd(r); err != nil {
+	db = database.Get()
+	defer database.Put(db)
+
+	if err = db.RootAdd(r); err != nil {
 		t.Fatalf("Failed to add Root Directory %s to database: %s",
 			r.Path,
 			err.Error())
@@ -40,7 +45,7 @@ func TestWalkDirectory(t *testing.T) {
 
 	var files []*model.File
 
-	if files, err = w.db.FileGetAll(); err != nil {
+	if files, err = db.FileGetAll(); err != nil {
 		t.Fatalf("Failed to load all Files from Database: %s",
 			err.Error())
 	} else if len(files) != fileCnt {

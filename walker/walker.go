@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-17 17:51:05 krylon>
+// Time-stamp: <2025-02-03 18:43:35 krylon>
 
 // Package walker implements the traversal of directories and the processing
 // of the files therein.
@@ -19,7 +19,6 @@ import (
 
 	"github.com/blicero/snoopy/blacklist"
 	"github.com/blicero/snoopy/common"
-	"github.com/blicero/snoopy/common/path"
 	"github.com/blicero/snoopy/database"
 	"github.com/blicero/snoopy/logdomain"
 	"github.com/blicero/snoopy/model"
@@ -35,7 +34,6 @@ const (
 type Walker struct {
 	log    *log.Logger
 	bl     *blacklist.Blacklist
-	db     *database.Database
 	active atomic.Bool
 	visitQ chan *model.Root
 	ticker *time.Ticker
@@ -44,12 +42,9 @@ type Walker struct {
 // NewWithBlacklist creates a new Walker instance that uses the given Blacklist.
 func NewWithBlacklist(bl *blacklist.Blacklist) (*Walker, error) {
 	var (
-		err    error
-		dbpath string
-		w      = &Walker{bl: bl}
+		err error
+		w   = &Walker{bl: bl}
 	)
-
-	dbpath = common.Path(path.Database)
 
 	if w.log, err = common.GetLogger(logdomain.Walker); err != nil {
 		fmt.Fprintf(
@@ -57,11 +52,6 @@ func NewWithBlacklist(bl *blacklist.Blacklist) (*Walker, error) {
 			"Error creating Log for Walker: %s\n",
 			err.Error(),
 		)
-		return nil, err
-	} else if w.db, err = database.Open(dbpath); err != nil {
-		w.log.Printf("[ERROR] Failed to open database at %s: %s\n",
-			dbpath,
-			err.Error())
 		return nil, err
 	}
 
@@ -76,12 +66,9 @@ func NewWithBlacklist(bl *blacklist.Blacklist) (*Walker, error) {
 // New creates a new Walker instance that uses the blacklist from the database.
 func New() (*Walker, error) {
 	var (
-		err    error
-		dbpath string
-		w      = new(Walker)
+		err error
+		w   = new(Walker)
 	)
-
-	dbpath = common.Path(path.Database)
 
 	if w.log, err = common.GetLogger(logdomain.Walker); err != nil {
 		fmt.Fprintf(
@@ -90,16 +77,16 @@ func New() (*Walker, error) {
 			err.Error(),
 		)
 		return nil, err
-	} else if w.db, err = database.Open(dbpath); err != nil {
-		w.log.Printf("[ERROR] Failed to open database at %s: %s\n",
-			dbpath,
-			err.Error())
-		return nil, err
 	}
 
-	var items []blacklist.Item
+	var (
+		db    = database.Get()
+		items []blacklist.Item
+	)
 
-	if items, err = w.db.BlacklistGetAll(); err != nil {
+	defer database.Put(db)
+
+	if items, err = db.BlacklistGetAll(); err != nil {
 		w.log.Printf("[ERROR] Failed to load all blacklist Items: %s\n",
 			err.Error())
 		return nil, err
@@ -159,13 +146,19 @@ func (w *Walker) Walk(r *model.Root) error {
 		return nil
 	}
 
-	var err error
+	var (
+		db  *database.Database
+		err error
+	)
+
+	db = database.Get()
+	defer database.Put(db)
 
 	if err = filepath.WalkDir(r.Path, w.generateVisitorFunc(r)); err != nil {
 		w.log.Printf("[ERROR] Encountered an error scanning Root %s: %s\n",
 			r.Path,
 			err.Error())
-	} else if err = w.db.RootMarkScan(r, time.Now()); err != nil {
+	} else if err = db.RootMarkScan(r, time.Now()); err != nil {
 		w.log.Printf("[ERROR] Failed to update scan timestamp on Root %s (%d): %s\n",
 			r.Path,
 			r.ID,
@@ -183,7 +176,11 @@ func (w *Walker) generateVisitorFunc(r *model.Root) fs.WalkDirFunc {
 			ftype fs.FileMode
 			info  fs.FileInfo
 			mtype *mimetype.MIME
+			db    *database.Database
 		)
+
+		db = database.Get()
+		defer database.Put(db)
 
 		if incoming != nil {
 			w.log.Printf("[ERROR] Incoming error %T: %s\n",
@@ -205,7 +202,7 @@ func (w *Walker) generateVisitorFunc(r *model.Root) fs.WalkDirFunc {
 				path,
 				err.Error())
 			return err
-		} else if f, err = w.db.FileGetByPath(path); err != nil {
+		} else if f, err = db.FileGetByPath(path); err != nil {
 			w.log.Printf("[ERROR] Failed to look up file %s by path: %s\n",
 				path,
 				err.Error())
@@ -232,7 +229,7 @@ func (w *Walker) generateVisitorFunc(r *model.Root) fs.WalkDirFunc {
 				Type:   mtype.String(),
 			}
 
-			if err = w.db.FileAdd(f); err != nil {
+			if err = db.FileAdd(f); err != nil {
 				w.log.Printf("[ERROR] Failed to add File %s to database: %s\n",
 					path,
 					err.Error())
@@ -243,7 +240,7 @@ func (w *Walker) generateVisitorFunc(r *model.Root) fs.WalkDirFunc {
 				f.Path,
 				f.CTime.Format(common.TimestampFormat),
 				info.ModTime().Format(common.TimestampFormat))
-			w.db.FileUpdateCtime(f, info.ModTime()) // nolint: errcheck
+			db.FileUpdateCtime(f, info.ModTime()) // nolint: errcheck
 		}
 
 		return nil
