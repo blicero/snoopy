@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2025-02-01 16:12:57 krylon>
+# Time-stamp: <2025-02-03 18:49:22 krylon>
 #
 #+TAGS: internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -9,7 +9,7 @@
 #+TODO: MEDITATE(m) PLANNING(p) | SUSPENDED(s)
 #+PRIORITIES: A G D
 
-* Snoopy [3/6]
+* Snoopy [4/6]
   :PROPERTIES:
   :COOKIE_DATA: todo recursive
   :VISIBILITY: children
@@ -19,16 +19,17 @@
   feasible.
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 202 :emphasize t
-   #+CAPTION: Clock summary at [2025-02-01 Sa 16:12]
+   #+CAPTION: Clock summary at [2025-02-03 Mo 18:49]
    | Headline                             | Time       |            |       |      |
    |--------------------------------------+------------+------------+-------+------|
-   | *Total time*                         | *2d 22:47* |            |       |      |
+   | *Total time*                         | *2d 23:13* |            |       |      |
    |--------------------------------------+------------+------------+-------+------|
-   | *Snoopy [3/6]*                       | *2d 22:47* |            |       |      |
-   | \_  /Components [2/5]/               |            | /2d 17:43/ |       |      |
+   | *Snoopy [4/6]*                       | *2d 23:13* |            |       |      |
+   | \_  /Components [3/5]/               |            | /2d 18:09/ |       |      |
    | \_    Data model [0/0]               |            |            |  0:37 |      |
-   | \_    Database [2/3]                 |            |            | 10:47 |      |
+   | \_    Database [3/3]                 |            |            | 11:13 |      |
    | \_      Prune                        |            |            |       | 1:52 |
+   | \_      Global connection pool       |            |            |       | 0:26 |
    | \_      Relative paths               |            |            |       | 2:09 |
    | \_    Blacklist [0/0]                |            |            |  2:51 |      |
    | \_    Walker [0/0]                   |            |            | 10:48 |      |
@@ -44,7 +45,7 @@
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
    :END:
-** Components [2/5]
+** Components [3/5]
    :PROPERTIES:
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
@@ -57,7 +58,7 @@
     :LOGBOOK:
     CLOCK: [2024-12-22 So 15:33]--[2024-12-22 So 16:10] =>  0:37
     :END:
-*** Database [2/3]
+*** Database [3/3]
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
     :VISIBILITY: children
@@ -82,7 +83,11 @@
      :END:
      Would be nice to remove Files that no longer exist, as well as their
      associated metadata.
-**** TODO Global connection pool
+**** DONE Global connection pool
+     CLOSED: [2025-02-03 Mo 18:49]
+     :LOGBOOK:
+     CLOCK: [2025-02-03 Mo 18:23]--[2025-02-03 Mo 18:49] =>  0:26
+     :END:
      It's just the logical conclusion
 **** CANCELLED Relative paths
      CLOSED: [2024-12-30 Mo 20:22]
