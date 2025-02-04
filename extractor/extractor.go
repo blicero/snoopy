@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 08. 01. 2025 by Benjamin Walkenhorst
 // (c) 2025 Benjamin Walkenhorst
-// Time-stamp: <2025-01-24 12:08:49 krylon>
+// Time-stamp: <2025-02-04 20:09:00 krylon>
 
 // Package extractor deals with extracting (hence the name - duh!) searchable
 // metadata from the files the Walker has found.
@@ -133,7 +133,7 @@ func New() (*Extractor, error) {
 		err error
 		ex  = &Extractor{
 			handlers:  maps.Clone(workers),
-			workerCnt: runtime.NumCPU(),
+			workerCnt: max(runtime.NumCPU()/2, 1),
 		}
 	)
 
