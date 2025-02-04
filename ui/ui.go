@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 30. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-02-03 19:56:31 krylon>
+// Time-stamp: <2025-02-04 19:32:14 krylon>
 
 package ui
 
@@ -201,6 +201,7 @@ func Create() (*SWin, error) {
 	g.win.Connect("destroy", gtk.MainQuit)
 	g.tabs[tiRoot].view.Connect("button-press-event", g.handleRootListClick)
 	g.tabs[tiSearch].view.Connect("button-press-event", g.handleSearchResultClick)
+	g.tabs[tiFiles].view.Connect("button-press-event", g.handleFileListClick)
 	g.tabs[tiSearch].search.Connect("activate", g.handleSearchExec)
 
 	g.win.Add(g.mainBox)
@@ -906,6 +907,114 @@ func (g *SWin) handleSearchResultClick(view *gtk.TreeView, ev *gdk.Event) {
 	menu.ShowAll()
 	menu.PopupAtPointer(ev)
 } // func (g *SWin) handleSearchResultClick(view *gtk.TreeView, ev *gdk.Event)
+
+func (g *SWin) handleFileListClick(view *gtk.TreeView, ev *gdk.Event) {
+	krylib.Trace()
+	var be = gdk.EventButtonNewFromEvent(ev)
+
+	if be.Button() != gdk.BUTTON_SECONDARY {
+		return
+	}
+
+	var (
+		err    error
+		exists bool
+		x, y   float64
+		msg    string
+		path   *gtk.TreePath
+		store  *gtk.TreeModel
+		istore gtk.ITreeModel
+		filter *gtk.TreeModelFilter
+		iter   *gtk.TreeIter
+	)
+
+	x = be.X()
+	y = be.Y()
+	path, _, _, _, exists = view.GetPathAtPos(int(x), int(y))
+
+	if !exists {
+		g.log.Printf("[DEBUG] There is no item at %f/%f\n",
+			x,
+			y)
+		return
+	} else if istore, err = view.GetModel(); err != nil {
+		g.log.Printf("[ERROR] Cannot get Model from View: %s\n",
+			err.Error())
+		return
+	}
+
+	filter = istore.(*gtk.TreeModelFilter)
+	store = g.tabs[tiFiles].store.ToTreeModel()
+
+	if iter, err = filter.GetIter(path); err != nil {
+		g.log.Printf("[ERROR] Cannot get Iter from TreePath %s: %s\n",
+			path,
+			err.Error())
+		return
+	}
+
+	iter = filter.ConvertIterToChildIter(iter)
+	path, _ = store.GetPath(iter) // nolint: ineffassign,staticcheck
+
+	var (
+		val *glib.Value
+		gv  any
+		id  int64
+	)
+	if val, err = store.GetValue(iter, 0); err != nil {
+		g.log.Printf("[ERROR] Cannot get value for column 0: %s\n",
+			err.Error())
+		return
+	} else if gv, err = val.GoValue(); err != nil {
+		g.log.Printf("[ERROR] Cannot get Go value from GLib value: %s\n",
+			err.Error())
+		return
+	}
+
+	switch v := gv.(type) {
+	case int:
+		id = int64(v)
+	case int64:
+		id = v
+	default:
+		g.log.Printf("[ERROR] Unexpected type for ID column: %T\n",
+			v)
+		return
+	}
+
+	var (
+		db   *database.Database
+		f    *model.File
+		menu *gtk.Menu
+	)
+
+	db = g.pool.Get()
+	defer g.pool.Put(db)
+
+	if f, err = db.FileGetByID(id); err != nil {
+		msg = fmt.Sprintf("Failed to load File #%d from Database: %s",
+			id,
+			err.Error())
+		g.log.Printf("[ERROR] %s\n", msg)
+		g.displayMsg(msg)
+		return
+	} else if f == nil {
+		msg = fmt.Sprintf("File %d was not found in Database", id)
+		g.log.Printf("[CANTHAPPEN] %s\n", msg)
+		g.displayMsg(msg)
+		return
+	} else if menu, err = g.mkContextMenuFile(nil, f); err != nil {
+		msg = fmt.Sprintf("Failed to create context menu for %s: %s",
+			f.Path,
+			err.Error())
+		g.log.Printf("[ERROR] %s\n", msg)
+		g.displayMsg(msg)
+		return
+	}
+
+	menu.ShowAll()
+	menu.PopupAtPointer(ev)
+} // func (g *SWin) handleFileListClick(view *gtk.TreeView, ev *gdk.Event)
 
 func (g *SWin) mkContextMenuFile(_ *gtk.TreePath, f *model.File) (*gtk.Menu, error) {
 	var (
