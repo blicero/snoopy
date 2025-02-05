@@ -247,8 +247,10 @@ func (g *SWin) checkMsgQ() bool {
 	case msg := <-g.MsgQ:
 		switch msg.Level {
 		case MsgStatusbar:
+			g.log.Printf("[INFO] %s\n", msg.Message)
 			g.statusbar.Push(666, msg.Message)
 		case MsgDialog:
+			g.log.Printf("[INFO] %s\n", msg.Message)
 			g.displayMsg(msg.Message)
 		case MsgLog:
 			g.log.Printf("[DEBUG] %s\n", msg.Message)
