@@ -685,7 +685,7 @@ func (g *SWin) handleRootListClick(view *gtk.TreeView, evt *gdk.Event) {
 		g.log.Printf("[CANTHAPPEN] %s\n", msg)
 		g.displayMsg(msg)
 		return
-	} else if menu, err = g.mkRootContextMenu(path, root); err != nil {
+	} else if menu, err = g.mkContextMenuRoot(path, root); err != nil {
 		g.logError(err.Error())
 		return
 	}
@@ -694,7 +694,7 @@ func (g *SWin) handleRootListClick(view *gtk.TreeView, evt *gdk.Event) {
 	menu.PopupAtPointer(evt)
 } // func (g *SWin) handleRootListClick(view *gtk.TreeView, evt *gdk.Event)
 
-func (g *SWin) mkRootContextMenu(_ *gtk.TreePath, root *model.Root) (*gtk.Menu, error) {
+func (g *SWin) mkContextMenuRoot(_ *gtk.TreePath, root *model.Root) (*gtk.Menu, error) {
 	krylib.Trace()
 	var (
 		err                  error
@@ -720,7 +720,7 @@ func (g *SWin) mkRootContextMenu(_ *gtk.TreePath, root *model.Root) (*gtk.Menu, 
 ERROR:
 	g.logError(err.Error())
 	return nil, err
-} // func (g *SWin) mkRootContextMenu(path *gtk.TreePath, root *model.Root) (*gtk.Menu, error)
+} // func (g *SWin) mkContextMenuRoot(path *gtk.TreePath, root *model.Root) (*gtk.Menu, error)
 
 func (g *SWin) handlePrune() {
 	krylib.Trace()
