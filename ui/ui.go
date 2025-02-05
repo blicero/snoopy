@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 30. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-02-04 19:32:14 krylon>
+// Time-stamp: <2025-02-05 19:40:53 krylon>
 
 package ui
 
@@ -1072,4 +1072,94 @@ func (g *SWin) handleOpenFile(f *model.File) {
 func (g *SWin) handleFileInfo(f *model.File) {
 	g.log.Printf("[DEBUG] IMPLEMENTME: handleFileInfo(%s)\n",
 		f.Path)
-} // func (g *SWin) handleFileInfo(f *model.File)
+	var (
+		err                             error
+		dlg                             *gtk.Dialog
+		dbox                            *gtk.Box
+		grid                            *gtk.Grid
+		lblType, lblSize, lblTime       *gtk.Label
+		entryType, entrySize, entryTime *gtk.Entry
+	)
+
+	if dlg, err = gtk.DialogNewWithButtons(
+		f.Path,
+		g.win,
+		gtk.DIALOG_MODAL,
+		[]any{
+			"Okay",
+			gtk.RESPONSE_OK,
+		},
+	); err != nil {
+		var msg = fmt.Sprintf("Failed to create Dialog: %s",
+			err.Error())
+		g.MsgQ <- Msg{
+			Level:   MsgStatusbar,
+			Message: msg,
+		}
+		return
+	}
+
+	defer dlg.Close()
+
+	if dbox, err = dlg.GetContentArea(); err != nil {
+		var msg = fmt.Sprintf("Failed to get Dialog content area: %s",
+			err.Error())
+		g.MsgQ <- Msg{
+			Level:   MsgStatusbar,
+			Message: msg,
+		}
+		return
+	} else if grid, err = gtk.GridNew(); err != nil {
+		var msg = fmt.Sprintf("Failed to create Gtk Grid: %s",
+			err.Error())
+		g.MsgQ <- Msg{
+			Level:   MsgStatusbar,
+			Message: msg,
+		}
+		return
+	}
+
+	lblType, _ = gtk.LabelNew("Type")
+	lblSize, _ = gtk.LabelNew("Size")
+	lblTime, _ = gtk.LabelNew("Modified")
+	entryType, _ = gtk.EntryNew()
+	entrySize, _ = gtk.EntryNew()
+	entryTime, _ = gtk.EntryNew()
+
+	entryType.SetEditable(false)
+	entrySize.SetEditable(false)
+	entryTime.SetEditable(false)
+
+	grid.Attach(lblType, 0, 0, 1, 1)
+	grid.Attach(lblSize, 0, 1, 1, 1)
+	grid.Attach(lblTime, 0, 2, 1, 1)
+	grid.Attach(entryType, 1, 0, 1, 1)
+	grid.Attach(entrySize, 1, 1, 1, 1)
+	grid.Attach(entryTime, 1, 2, 1, 1)
+
+	entryType.SetText(f.Type)
+
+	var (
+		info os.FileInfo
+	)
+
+	if info, err = os.Stat(f.Path); err != nil {
+		var msg = fmt.Sprintf("Failed to stat() %s: %s",
+			f.Path,
+			err.Error())
+		g.MsgQ <- Msg{
+			Level:   MsgDialog,
+			Message: msg,
+		}
+		return
+	}
+
+	entrySize.SetText(krylib.FmtBytes(info.Size()))
+	entryTime.SetText(info.ModTime().Format(common.TimestampFormat))
+
+	dbox.PackStart(grid, true, true, 0)
+
+	dlg.ShowAll()
+	dlg.SetResizable(false)
+	dlg.Run() // nolint: errcheck
+} //func (g *SWin) handleFileInfo(f *model.File)
