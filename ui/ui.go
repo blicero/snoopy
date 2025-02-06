@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 30. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-02-05 19:40:53 krylon>
+// Time-stamp: <2025-02-06 17:53:20 krylon>
 
 package ui
 
@@ -1140,7 +1140,10 @@ func (g *SWin) handleFileInfo(f *model.File) {
 	entryType.SetText(f.Type)
 
 	var (
+		db   *database.Database
 		info os.FileInfo
+		meta *model.FileMeta
+		row  = 3
 	)
 
 	if info, err = os.Stat(f.Path); err != nil {
@@ -1152,6 +1155,36 @@ func (g *SWin) handleFileInfo(f *model.File) {
 			Message: msg,
 		}
 		return
+	}
+
+	db = g.pool.Get()
+	defer g.pool.Put(db)
+
+	if meta, err = db.MetaGetByFile(f); err != nil {
+		var msg = fmt.Sprintf("Failed query metadata for %s: %s",
+			f.Path,
+			err.Error())
+		g.MsgQ <- Msg{
+			Level:   MsgDialog,
+			Message: msg,
+		}
+		return
+	}
+
+	for k, v := range meta.Meta {
+		var (
+			lbl *gtk.Label
+			val *gtk.Entry
+		)
+
+		lbl, _ = gtk.LabelNew(k)
+		val, _ = gtk.EntryNew()
+
+		val.SetText(v)
+		val.SetEditable(false)
+		grid.Attach(lbl, 0, row, 1, 1)
+		grid.Attach(val, 1, row, 1, 1)
+		row++
 	}
 
 	entrySize.SetText(krylib.FmtBytes(info.Size()))
