@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 08. 01. 2025 by Benjamin Walkenhorst
 // (c) 2025 Benjamin Walkenhorst
-// Time-stamp: <2025-02-04 20:09:00 krylon>
+// Time-stamp: <2025-02-07 18:52:51 krylon>
 
 // Package extractor deals with extracting (hence the name - duh!) searchable
 // metadata from the files the Walker has found.
@@ -12,6 +12,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"image"
 	"io"
 	"log"
 	"maps"
@@ -413,29 +414,44 @@ func processAudio(f *model.File) (*model.FileMeta, error) {
 
 func processImage(f *model.File) (*model.FileMeta, error) {
 	var (
-		err  error
-		fh   *os.File
-		im   exif2.Exif
-		meta = &model.FileMeta{
+		err    error
+		f1, f2 *os.File
+		im     exif2.Exif
+		pic    image.Config
+		meta   = &model.FileMeta{
 			FileID:    f.ID,
 			Timestamp: time.Now(),
+			Meta:      make(map[string]string),
 		}
 	)
 
-	if fh, err = os.Open(f.Path); err != nil {
+	if f1, err = os.Open(f.Path); err != nil {
 		return nil, err
 	}
 
-	defer fh.Close() // nolint: errcheck
+	defer f1.Close() // nolint: errcheck
 
-	if im, err = imagemeta.Decode(fh); err == nil {
-		meta.Meta = map[string]string{
-			"Date":        im.GPS.Date().Format(common.TimestampFormat),
-			"Latitude":    strconv.FormatFloat(im.GPS.Latitude(), 'f', -1, 32),
-			"Longitude":   strconv.FormatFloat(im.GPS.Longitude(), 'f', -1, 32),
-			"XResolution": strconv.FormatUint(uint64(im.XResolution), 10),
-			"YResolution": strconv.FormatUint(uint64(im.YResolution), 10),
-		}
+	if im, err = imagemeta.Decode(f1); err == nil {
+		meta.Meta["Date"] = im.GPS.Date().Format(common.TimestampFormat)
+		meta.Meta["Latitude"] = strconv.FormatFloat(im.GPS.Latitude(), 'f', -1, 32)
+		meta.Meta["Longitude"] = strconv.FormatFloat(im.GPS.Longitude(), 'f', -1, 32)
+	} else {
+		fmt.Fprintf(
+			os.Stderr,
+			"XXX Error extracting metadata from %s: %s\n",
+			f.Path,
+			err.Error())
+	}
+
+	if f2, err = os.Open(f.Path); err != nil {
+		return nil, err
+	}
+
+	defer f2.Close()
+
+	if pic, _, err = image.DecodeConfig(f2); err == nil {
+		meta.Meta["XResolution"] = strconv.FormatInt(int64(pic.Width), 10)
+		meta.Meta["YResolution"] = strconv.FormatInt(int64(pic.Height), 10)
 	}
 
 	if meta.Content, err = runTesseract(f); err != nil {
