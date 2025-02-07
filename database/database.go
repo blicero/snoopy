@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-23 16:29:28 krylon>
+// Time-stamp: <2025-02-07 19:14:47 krylon>
 
 // Package database provides the persistence layer for the application.
 package database
@@ -2118,9 +2118,9 @@ EXEC_QUERY:
 
 		if !rows.Next() {
 			// CANTHAPPEN
-			db.log.Printf("[ERROR] Query %s did not return a value\n",
-				qid)
-			return fmt.Errorf("Query %s did not return a value", qid)
+			// db.log.Printf("[ERROR] Query %s did not return a value\n",
+			// 	qid)
+			// return fmt.Errorf("Query %s did not return a value", qid)
 		} else if err = rows.Scan(&id); err != nil {
 			msg = fmt.Sprintf("Failed to get ID for newly added Metadata for File %d: %s",
 				m.FileID,
