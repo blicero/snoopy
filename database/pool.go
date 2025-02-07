@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 07. 06. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-02-03 18:40:31 krylon>
+// Time-stamp: <2025-02-07 19:05:36 krylon>
 
 package database
 
@@ -88,6 +88,7 @@ func Get() *Database {
 	return thePool.Get()
 } // func Get() *Database
 
+// Put returns a database connection to the global pool.
 func Put(db *Database) {
 	thePool.Put(db)
 }
