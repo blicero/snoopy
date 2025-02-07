@@ -1947,7 +1947,7 @@ EXEC_QUERY:
 			m                = new(model.FileMeta)
 		)
 
-		if err = rows.Scan(&m.ID, &m.FileID, &m.Content, &jMeta, &f.RootID, &f.Path, &f.Type, &ctime); err != nil {
+		if err = rows.Scan(&m.ID, &m.FileID, &timestamp, &m.Content, &jMeta, &f.RootID, &f.Path, &f.Type, &ctime); err != nil {
 			msg = fmt.Sprintf("Error scanning row for Metadata: %s",
 				err.Error())
 			db.log.Printf("[ERROR] %s\n", msg)
