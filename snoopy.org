@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2025-02-06 17:55:33 krylon>
+# Time-stamp: <2025-02-07 20:11:04 krylon>
 #
 #+TAGS: internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -9,7 +9,7 @@
 #+TODO: MEDITATE(m) PLANNING(p) | SUSPENDED(s)
 #+PRIORITIES: A G D
 
-* Snoopy [4/6]
+* Snoopy [4/8]
   :PROPERTIES:
   :COOKIE_DATA: todo recursive
   :VISIBILITY: children
@@ -19,33 +19,34 @@
   feasible.
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 202 :emphasize t
-   #+CAPTION: Clock summary at [2025-02-06 Do 17:55]
-   | Headline                             | Time      |            |       |      |
-   |--------------------------------------+-----------+------------+-------+------|
-   | *Total time*                         | *3d 1:39* |            |       |      |
-   |--------------------------------------+-----------+------------+-------+------|
-   | *Snoopy [4/6]*                       | *3d 1:39* |            |       |      |
-   | \_  /Components [3/5]/               |           | /2d 20:35/ |       |      |
-   | \_    Data model [0/0]               |           |            |  0:37 |      |
-   | \_    Database [3/3]                 |           |            | 11:13 |      |
-   | \_      Prune                        |           |            |       | 1:52 |
-   | \_      Global connection pool       |           |            |       | 0:26 |
-   | \_      Relative paths               |           |            |       | 2:09 |
-   | \_    Blacklist [0/0]                |           |            |  2:51 |      |
-   | \_    Walker [0/0]                   |           |            | 10:48 |      |
-   | \_    Extractor [0/0]                |           |            | 18:33 |      |
-   | \_    UI [0/1]                       |           |            | 17:32 |      |
-   | \_      Edit Blacklist from GUI      |           |            |       | 0:43 |
-   | \_    Searching [0/1]                |           |            |  7:01 |      |
-   | \_  /Bugs [1/1]/                     |           | /5:04/     |       |      |
-   | \_    GUI hangs after extractor runs |           |            |  5:04 |      |
+   #+CAPTION: Clock summary at [2025-02-07 Fr 20:11]
+   | Headline                                     | Time      |            |       |      |
+   |----------------------------------------------+-----------+------------+-------+------|
+   | *Total time*                                 | *3d 3:17* |            |       |      |
+   |----------------------------------------------+-----------+------------+-------+------|
+   | *Snoopy [4/8]*                               | *3d 3:17* |            |       |      |
+   | \_  /Components [3/7]/                       |           | /2d 22:13/ |       |      |
+   | \_    Data model [0/0]                       |           |            |  0:37 |      |
+   | \_    Database [3/3]                         |           |            | 11:13 |      |
+   | \_      Prune                                |           |            |       | 1:52 |
+   | \_      Global connection pool               |           |            |       | 0:26 |
+   | \_      Relative paths                       |           |            |       | 2:09 |
+   | \_    Blacklist [0/0]                        |           |            |  2:51 |      |
+   | \_    Walker [0/0]                           |           |            | 10:48 |      |
+   | \_    Extractor [0/1]                        |           |            | 20:11 |      |
+   | \_      Resolution of images and possibly... |           |            |       | 1:38 |
+   | \_    UI [0/1]                               |           |            | 17:32 |      |
+   | \_      Edit Blacklist from GUI              |           |            |       | 0:43 |
+   | \_    Searching [0/2]                        |           |            |  7:01 |      |
+   | \_  /Bugs [1/1]/                             |           | /5:04/     |       |      |
+   | \_    GUI hangs after extractor runs         |           |            |  5:04 |      |
    #+END:
 ** Features [0/0]
    :PROPERTIES:
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
    :END:
-** Components [3/5]
+** Components [3/7]
    :PROPERTIES:
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
@@ -126,7 +127,7 @@
     How / when do I want to run the Walker? Periodically? On command?
     I think on command is sufficient for now, I can add some periodic
     execution later on.
-*** Extractor [0/0]
+*** Extractor [0/1]
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
     :VISIBILITY: children
@@ -155,6 +156,12 @@
     thinking I might want to have some sort of structure beyond just a chunk
     of text. I'm thinking JSON? I have been meaning to play with SQLite's JSON
     handling, this could be a good opportunity to get acquainted with it.
+**** TODO Resolution of images and possibly videos?
+     :LOGBOOK:
+     CLOCK: [2025-02-07 Fr 18:32]--[2025-02-07 Fr 20:10] =>  1:38
+     :END:
+     I currently do not get valid resolutions for images, and none at all for
+     videos. It would be nice to get accurate data, or why even bother?
 **** Miming
      Running my application on a few representative directory trees, I get the
      following distribution of MIME types:
@@ -224,7 +231,7 @@
      :LOGBOOK:
      CLOCK: [2025-01-07 Di 17:53]--[2025-01-07 Di 18:36] =>  0:43
      :END:
-*** Searching [0/1]
+*** Searching [0/2]
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
     :VISIBILITY: children
@@ -238,6 +245,9 @@
     This is, after all, the big point of all the effort we have taken up to
     this point.
     SQLite has support for fulltext search, so I should be using it, yes?
+**** TODO [#D] Better UI
+     I want a richer UI for searching, allowing me to filter by type,
+     metadata, etc.
 **** TODO Ranking results
      SQLite provides some functionality to build your own ranking method, but
      nothing I can just use out of the box. I'll have to look into that more
