@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 08. 01. 2025 by Benjamin Walkenhorst
 // (c) 2025 Benjamin Walkenhorst
-// Time-stamp: <2025-02-07 18:52:51 krylon>
+// Time-stamp: <2025-02-08 16:39:04 krylon>
 
 // Package extractor deals with extracting (hence the name - duh!) searchable
 // metadata from the files the Walker has found.
@@ -12,7 +12,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"image"
 	"io"
 	"log"
 	"maps"
@@ -34,6 +33,7 @@ import (
 	"github.com/dhowden/tag"
 	"github.com/evanoberholster/imagemeta"
 	"github.com/evanoberholster/imagemeta/exif2"
+	"github.com/gotk3/gotk3/gdk"
 )
 
 const (
@@ -415,9 +415,9 @@ func processAudio(f *model.File) (*model.FileMeta, error) {
 func processImage(f *model.File) (*model.FileMeta, error) {
 	var (
 		err    error
-		f1, f2 *os.File
+		f1     *os.File
 		im     exif2.Exif
-		pic    image.Config
+		pixbuf *gdk.Pixbuf
 		meta   = &model.FileMeta{
 			FileID:    f.ID,
 			Timestamp: time.Now(),
@@ -436,22 +436,23 @@ func processImage(f *model.File) (*model.FileMeta, error) {
 		meta.Meta["Latitude"] = strconv.FormatFloat(im.GPS.Latitude(), 'f', -1, 32)
 		meta.Meta["Longitude"] = strconv.FormatFloat(im.GPS.Longitude(), 'f', -1, 32)
 	} else {
+		// fmt.Fprintf(
+		// 	os.Stderr,
+		// 	"XXX Error extracting metadata from %s: %s\n",
+		// 	f.Path,
+		// 	err.Error())
+	}
+
+	if pixbuf, err = gdk.PixbufNewFromFile(f.Path); err != nil {
 		fmt.Fprintf(
 			os.Stderr,
-			"XXX Error extracting metadata from %s: %s\n",
+			"XXX Error creating gdk.Pixbuf from %s: %s\n",
 			f.Path,
-			err.Error())
-	}
-
-	if f2, err = os.Open(f.Path); err != nil {
-		return nil, err
-	}
-
-	defer f2.Close()
-
-	if pic, _, err = image.DecodeConfig(f2); err == nil {
-		meta.Meta["XResolution"] = strconv.FormatInt(int64(pic.Width), 10)
-		meta.Meta["YResolution"] = strconv.FormatInt(int64(pic.Height), 10)
+			err.Error(),
+		)
+	} else {
+		meta.Meta["XResolution"] = strconv.FormatInt(int64(pixbuf.GetWidth()), 10)
+		meta.Meta["YResolution"] = strconv.FormatInt(int64(pixbuf.GetHeight()), 10)
 	}
 
 	if meta.Content, err = runTesseract(f); err != nil {
