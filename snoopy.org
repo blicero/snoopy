@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2025-02-07 20:11:04 krylon>
+# Time-stamp: <2025-02-08 16:42:12 krylon>
 #
 #+TAGS: internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -9,7 +9,7 @@
 #+TODO: MEDITATE(m) PLANNING(p) | SUSPENDED(s)
 #+PRIORITIES: A G D
 
-* Snoopy [4/8]
+* Snoopy [5/8]
   :PROPERTIES:
   :COOKIE_DATA: todo recursive
   :VISIBILITY: children
@@ -19,13 +19,13 @@
   feasible.
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 202 :emphasize t
-   #+CAPTION: Clock summary at [2025-02-07 Fr 20:11]
+   #+CAPTION: Clock summary at [2025-02-08 Sa 16:42]
    | Headline                                     | Time      |            |       |      |
    |----------------------------------------------+-----------+------------+-------+------|
-   | *Total time*                                 | *3d 3:17* |            |       |      |
+   | *Total time*                                 | *3d 4:28* |            |       |      |
    |----------------------------------------------+-----------+------------+-------+------|
-   | *Snoopy [4/8]*                               | *3d 3:17* |            |       |      |
-   | \_  /Components [3/7]/                       |           | /2d 22:13/ |       |      |
+   | *Snoopy [5/8]*                               | *3d 4:28* |            |       |      |
+   | \_  /Components [4/7]/                       |           | /2d 23:24/ |       |      |
    | \_    Data model [0/0]                       |           |            |  0:37 |      |
    | \_    Database [3/3]                         |           |            | 11:13 |      |
    | \_      Prune                                |           |            |       | 1:52 |
@@ -33,8 +33,8 @@
    | \_      Relative paths                       |           |            |       | 2:09 |
    | \_    Blacklist [0/0]                        |           |            |  2:51 |      |
    | \_    Walker [0/0]                           |           |            | 10:48 |      |
-   | \_    Extractor [0/1]                        |           |            | 20:11 |      |
-   | \_      Resolution of images and possibly... |           |            |       | 1:38 |
+   | \_    Extractor [1/1]                        |           |            | 21:22 |      |
+   | \_      Resolution of images and possibly... |           |            |       | 2:49 |
    | \_    UI [0/1]                               |           |            | 17:32 |      |
    | \_      Edit Blacklist from GUI              |           |            |       | 0:43 |
    | \_    Searching [0/2]                        |           |            |  7:01 |      |
@@ -46,7 +46,7 @@
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
    :END:
-** Components [3/7]
+** Components [4/7]
    :PROPERTIES:
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
@@ -127,7 +127,7 @@
     How / when do I want to run the Walker? Periodically? On command?
     I think on command is sufficient for now, I can add some periodic
     execution later on.
-*** Extractor [0/1]
+*** Extractor [1/1]
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
     :VISIBILITY: children
@@ -156,8 +156,10 @@
     thinking I might want to have some sort of structure beyond just a chunk
     of text. I'm thinking JSON? I have been meaning to play with SQLite's JSON
     handling, this could be a good opportunity to get acquainted with it.
-**** TODO Resolution of images and possibly videos?
+**** DONE Resolution of images and possibly videos?
+     CLOSED: [2025-02-08 Sa 16:41]
      :LOGBOOK:
+     CLOCK: [2025-02-08 Sa 15:30]--[2025-02-08 Sa 16:41] =>  1:11
      CLOCK: [2025-02-07 Fr 18:32]--[2025-02-07 Fr 20:10] =>  1:38
      :END:
      I currently do not get valid resolutions for images, and none at all for
