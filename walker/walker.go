@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-02-03 18:43:35 krylon>
+// Time-stamp: <2025-02-10 19:48:07 krylon>
 
 // Package walker implements the traversal of directories and the processing
 // of the files therein.
@@ -236,11 +236,15 @@ func (w *Walker) generateVisitorFunc(r *model.Root) fs.WalkDirFunc {
 				return err
 			}
 		} else if info.ModTime().After(f.CTime) {
-			w.log.Printf("[DEBUG] Update CTime on File %s:\nOld: %s\nNew: %s\n",
-				f.Path,
-				f.CTime.Format(common.TimestampFormat),
-				info.ModTime().Format(common.TimestampFormat))
-			db.FileUpdateCtime(f, info.ModTime()) // nolint: errcheck
+			var delta = info.ModTime().Sub(f.CTime)
+			if delta > time.Second {
+				w.log.Printf("[DEBUG] Update CTime on File %s:\nDelta: %s\nOld: %s\nNew: %s\n",
+					f.Path,
+					delta,
+					f.CTime.Format(common.TimestampFormat),
+					info.ModTime().Format(common.TimestampFormat))
+				db.FileUpdateCtime(f, info.ModTime()) // nolint: errcheck
+			}
 		}
 
 		return nil
