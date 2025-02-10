@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2025-02-10 20:01:38 krylon>
+# Time-stamp: <2025-02-10 20:55:51 krylon>
 #
 #+TAGS: internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -9,7 +9,7 @@
 #+TODO: MEDITATE(m) PLANNING(p) | SUSPENDED(s)
 #+PRIORITIES: A G D
 
-* Snoopy [6/9]
+* Snoopy [7/11]
   :PROPERTIES:
   :COOKIE_DATA: todo recursive
   :VISIBILITY: children
@@ -19,17 +19,18 @@
   feasible.
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 202 :emphasize t
-   #+CAPTION: Clock summary at [2025-02-10 Mo 20:01]
+   #+CAPTION: Clock summary at [2025-02-10 Mo 20:55]
    | Headline                                     | Time      |            |       |      |
    |----------------------------------------------+-----------+------------+-------+------|
-   | *Total time*                                 | *3d 4:44* |            |       |      |
+   | *Total time*                                 | *3d 4:56* |            |       |      |
    |----------------------------------------------+-----------+------------+-------+------|
-   | *Snoopy [6/9]*                               | *3d 4:44* |            |       |      |
-   | \_  /Components [5/8]/                       |           | /2d 23:40/ |       |      |
+   | *Snoopy [7/11]*                              | *3d 4:56* |            |       |      |
+   | \_  /Components [6/10]/                      |           | /2d 23:52/ |       |      |
    | \_    Main [1/1]                             |           |            |  0:06 |      |
    | \_      Prune log file on startup            |           |            |       | 0:06 |
    | \_    Data model [0/0]                       |           |            |  0:37 |      |
-   | \_    Database [3/3]                         |           |            | 11:13 |      |
+   | \_    Database [4/5]                         |           |            | 11:25 |      |
+   | \_      How big should the pool be?          |           |            |       | 0:12 |
    | \_      Prune                                |           |            |       | 1:52 |
    | \_      Global connection pool               |           |            |       | 0:26 |
    | \_      Relative paths                       |           |            |       | 2:09 |
@@ -48,7 +49,7 @@
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
    :END:
-** Components [5/8]
+** Components [6/10]
    :PROPERTIES:
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
@@ -71,7 +72,7 @@
     :LOGBOOK:
     CLOCK: [2024-12-22 So 15:33]--[2024-12-22 So 16:10] =>  0:37
     :END:
-*** Database [3/3]
+*** Database [4/5]
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
     :VISIBILITY: children
@@ -88,6 +89,12 @@
     CLOCK: [2024-12-23 Mo 20:31]--[2024-12-23 Mo 21:42] =>  1:11
     :END:
     I'm gonna use SQLite, it's just too obvious a choice.
+**** DONE How big should the pool be?
+     CLOSED: [2025-02-10 Mo 20:55]
+     :LOGBOOK:
+     CLOCK: [2025-02-10 Mo 20:43]--[2025-02-10 Mo 20:55] =>  0:12
+     :END:
+**** TODO How often does the Database wait for a lock?
 **** DONE Prune
      CLOSED: [2025-02-01 Sa 16:12]
      :LOGBOOK:
