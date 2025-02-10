@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2025-02-10 20:55:51 krylon>
+# Time-stamp: <2025-02-10 21:19:03 krylon>
 #
 #+TAGS: internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -9,7 +9,7 @@
 #+TODO: MEDITATE(m) PLANNING(p) | SUSPENDED(s)
 #+PRIORITIES: A G D
 
-* Snoopy [7/11]
+* Snoopy [8/11]
   :PROPERTIES:
   :COOKIE_DATA: todo recursive
   :VISIBILITY: children
@@ -19,37 +19,38 @@
   feasible.
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 202 :emphasize t
-   #+CAPTION: Clock summary at [2025-02-10 Mo 20:55]
-   | Headline                                     | Time      |            |       |      |
-   |----------------------------------------------+-----------+------------+-------+------|
-   | *Total time*                                 | *3d 4:56* |            |       |      |
-   |----------------------------------------------+-----------+------------+-------+------|
-   | *Snoopy [7/11]*                              | *3d 4:56* |            |       |      |
-   | \_  /Components [6/10]/                      |           | /2d 23:52/ |       |      |
-   | \_    Main [1/1]                             |           |            |  0:06 |      |
-   | \_      Prune log file on startup            |           |            |       | 0:06 |
-   | \_    Data model [0/0]                       |           |            |  0:37 |      |
-   | \_    Database [4/5]                         |           |            | 11:25 |      |
-   | \_      How big should the pool be?          |           |            |       | 0:12 |
-   | \_      Prune                                |           |            |       | 1:52 |
-   | \_      Global connection pool               |           |            |       | 0:26 |
-   | \_      Relative paths                       |           |            |       | 2:09 |
-   | \_    Blacklist [0/0]                        |           |            |  2:51 |      |
-   | \_    Walker [0/0]                           |           |            | 10:58 |      |
-   | \_    Extractor [1/1]                        |           |            | 21:22 |      |
-   | \_      Resolution of images and possibly... |           |            |       | 2:49 |
-   | \_    UI [0/1]                               |           |            | 17:32 |      |
-   | \_      Edit Blacklist from GUI              |           |            |       | 0:43 |
-   | \_    Searching [0/2]                        |           |            |  7:01 |      |
-   | \_  /Bugs [1/1]/                             |           | /5:04/     |       |      |
-   | \_    GUI hangs after extractor runs         |           |            |  5:04 |      |
+   #+CAPTION: Clock summary at [2025-02-10 Mo 21:19]
+   | Headline                                        | Time      |           |       |      |
+   |-------------------------------------------------+-----------+-----------+-------+------|
+   | *Total time*                                    | *3d 5:18* |           |       |      |
+   |-------------------------------------------------+-----------+-----------+-------+------|
+   | *Snoopy [8/11]*                                 | *3d 5:18* |           |       |      |
+   | \_  /Components [7/10]/                         |           | /3d 0:14/ |       |      |
+   | \_    Main [1/1]                                |           |           |  0:06 |      |
+   | \_      Prune log file on startup               |           |           |       | 0:06 |
+   | \_    Data model [0/0]                          |           |           |  0:37 |      |
+   | \_    Database [5/5]                            |           |           | 11:47 |      |
+   | \_      How big should the pool be?             |           |           |       | 0:12 |
+   | \_      How often does the Database wait for... |           |           |       | 0:22 |
+   | \_      Prune                                   |           |           |       | 1:52 |
+   | \_      Global connection pool                  |           |           |       | 0:26 |
+   | \_      Relative paths                          |           |           |       | 2:09 |
+   | \_    Blacklist [0/0]                           |           |           |  2:51 |      |
+   | \_    Walker [0/0]                              |           |           | 10:58 |      |
+   | \_    Extractor [1/1]                           |           |           | 21:22 |      |
+   | \_      Resolution of images and possibly...    |           |           |       | 2:49 |
+   | \_    UI [0/1]                                  |           |           | 17:32 |      |
+   | \_      Edit Blacklist from GUI                 |           |           |       | 0:43 |
+   | \_    Searching [0/2]                           |           |           |  7:01 |      |
+   | \_  /Bugs [1/1]/                                |           | /5:04/    |       |      |
+   | \_    GUI hangs after extractor runs            |           |           |  5:04 |      |
    #+END:
 ** Features [0/0]
    :PROPERTIES:
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
    :END:
-** Components [6/10]
+** Components [7/10]
    :PROPERTIES:
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
@@ -72,7 +73,7 @@
     :LOGBOOK:
     CLOCK: [2024-12-22 So 15:33]--[2024-12-22 So 16:10] =>  0:37
     :END:
-*** Database [4/5]
+*** Database [5/5]
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
     :VISIBILITY: children
@@ -94,7 +95,12 @@
      :LOGBOOK:
      CLOCK: [2025-02-10 Mo 20:43]--[2025-02-10 Mo 20:55] =>  0:12
      :END:
-**** TODO How often does the Database wait for a lock?
+**** DONE How often does the Database wait for a lock?
+     CLOSED: [2025-02-10 Mo 21:18]
+     :LOGBOOK:
+     CLOCK: [2025-02-10 Mo 20:56]--[2025-02-10 Mo 21:18] =>  0:22
+     :END:
+     Apparently, zero times.
 **** DONE Prune
      CLOSED: [2025-02-01 Sa 16:12]
      :LOGBOOK:
