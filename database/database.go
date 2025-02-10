@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-02-07 19:14:47 krylon>
+// Time-stamp: <2025-02-10 21:01:13 krylon>
 
 // Package database provides the persistence layer for the application.
 package database
@@ -16,6 +16,7 @@ import (
 	"os"
 	"regexp"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/blicero/krylib"
@@ -59,6 +60,10 @@ var ErrInvalidSavepoint = errors.New("that save point does not exist")
 // consider the error as transient and try again after a short delay.
 var retryPat = regexp.MustCompile("(?i)database is (?:locked|busy)")
 
+// WaitCnt is a counter to measure how often database queries are stalled
+// due to locking.
+var WaitCnt atomic.Int64
+
 // worthARetry returns true if an error returned from the database
 // is matched by the retryPat regex.
 func worthARetry(e error) bool {
@@ -70,6 +75,7 @@ func worthARetry(e error) bool {
 const retryDelay = 25 * time.Millisecond
 
 func waitForRetry() {
+	WaitCnt.Add(1)
 	time.Sleep(retryDelay)
 } // func waitForRetry()
 

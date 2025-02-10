@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-02-10 19:54:09 krylon>
+// Time-stamp: <2025-02-10 21:01:32 krylon>
 
 package main
 
@@ -13,6 +13,7 @@ import (
 
 	"github.com/blicero/snoopy/common"
 	"github.com/blicero/snoopy/common/path"
+	"github.com/blicero/snoopy/database"
 	"github.com/blicero/snoopy/ui"
 )
 
@@ -33,6 +34,11 @@ func main() {
 	flag.StringVar(&base, "base", common.BaseDir, "Directory to store application-related files in")
 	flag.BoolVar(&trunc, "truncate", false, "Truncate the log file before starting")
 	flag.Parse()
+
+	defer func() {
+		fmt.Printf("Database connections have waited for the lock %d times.\n",
+			database.WaitCnt.Load())
+	}()
 
 	if base != common.BaseDir {
 		if err = common.SetBaseDir(base); err != nil {
