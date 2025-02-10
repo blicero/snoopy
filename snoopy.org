@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2025-02-08 16:42:12 krylon>
+# Time-stamp: <2025-02-10 20:01:38 krylon>
 #
 #+TAGS: internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -9,7 +9,7 @@
 #+TODO: MEDITATE(m) PLANNING(p) | SUSPENDED(s)
 #+PRIORITIES: A G D
 
-* Snoopy [5/8]
+* Snoopy [6/9]
   :PROPERTIES:
   :COOKIE_DATA: todo recursive
   :VISIBILITY: children
@@ -19,20 +19,22 @@
   feasible.
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 202 :emphasize t
-   #+CAPTION: Clock summary at [2025-02-08 Sa 16:42]
+   #+CAPTION: Clock summary at [2025-02-10 Mo 20:01]
    | Headline                                     | Time      |            |       |      |
    |----------------------------------------------+-----------+------------+-------+------|
-   | *Total time*                                 | *3d 4:28* |            |       |      |
+   | *Total time*                                 | *3d 4:44* |            |       |      |
    |----------------------------------------------+-----------+------------+-------+------|
-   | *Snoopy [5/8]*                               | *3d 4:28* |            |       |      |
-   | \_  /Components [4/7]/                       |           | /2d 23:24/ |       |      |
+   | *Snoopy [6/9]*                               | *3d 4:44* |            |       |      |
+   | \_  /Components [5/8]/                       |           | /2d 23:40/ |       |      |
+   | \_    Main [1/1]                             |           |            |  0:06 |      |
+   | \_      Prune log file on startup            |           |            |       | 0:06 |
    | \_    Data model [0/0]                       |           |            |  0:37 |      |
    | \_    Database [3/3]                         |           |            | 11:13 |      |
    | \_      Prune                                |           |            |       | 1:52 |
    | \_      Global connection pool               |           |            |       | 0:26 |
    | \_      Relative paths                       |           |            |       | 2:09 |
    | \_    Blacklist [0/0]                        |           |            |  2:51 |      |
-   | \_    Walker [0/0]                           |           |            | 10:48 |      |
+   | \_    Walker [0/0]                           |           |            | 10:58 |      |
    | \_    Extractor [1/1]                        |           |            | 21:22 |      |
    | \_      Resolution of images and possibly... |           |            |       | 2:49 |
    | \_    UI [0/1]                               |           |            | 17:32 |      |
@@ -46,11 +48,21 @@
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
    :END:
-** Components [4/7]
+** Components [5/8]
    :PROPERTIES:
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
    :END:
+*** Main [1/1]
+    :PROPERTIES:
+    :COOKIE_DATA: todo recursive
+    :VISIBILITY: children
+    :END:
+**** DONE Prune log file on startup
+     CLOSED: [2025-02-10 Mo 19:56]
+     :LOGBOOK:
+     CLOCK: [2025-02-10 Mo 19:50]--[2025-02-10 Mo 19:56] =>  0:06
+     :END:
 *** Data model [0/0]
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
@@ -118,6 +130,7 @@
     :VISIBILITY: children
     :END:
     :LOGBOOK:
+    CLOCK: [2025-02-10 Mo 19:40]--[2025-02-10 Mo 19:50] =>  0:10
     CLOCK: [2025-01-07 Di 18:43]--[2025-01-07 Di 20:49] =>  2:06
     CLOCK: [2025-01-06 Mo 16:51]--[2025-01-06 Mo 17:41] =>  0:50
     CLOCK: [2024-12-28 Sa 14:44]--[2024-12-28 Sa 18:50] =>  4:06
