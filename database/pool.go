@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 07. 06. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-02-07 19:05:36 krylon>
+// Time-stamp: <2025-02-10 20:54:53 krylon>
 
 package database
 
@@ -30,7 +30,7 @@ type Pool struct {
 	empty *sync.Cond
 }
 
-const poolSize = 8
+const poolSize = 3
 
 var (
 	thePool  *Pool
