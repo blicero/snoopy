@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 08. 01. 2025 by Benjamin Walkenhorst
 // (c) 2025 Benjamin Walkenhorst
-// Time-stamp: <2025-02-08 16:39:04 krylon>
+// Time-stamp: <2025-02-10 19:46:53 krylon>
 
 // Package extractor deals with extracting (hence the name - duh!) searchable
 // metadata from the files the Walker has found.
@@ -435,7 +435,7 @@ func processImage(f *model.File) (*model.FileMeta, error) {
 		meta.Meta["Date"] = im.GPS.Date().Format(common.TimestampFormat)
 		meta.Meta["Latitude"] = strconv.FormatFloat(im.GPS.Latitude(), 'f', -1, 32)
 		meta.Meta["Longitude"] = strconv.FormatFloat(im.GPS.Longitude(), 'f', -1, 32)
-	} else {
+	} else { // nolint: staticcheck
 		// fmt.Fprintf(
 		// 	os.Stderr,
 		// 	"XXX Error extracting metadata from %s: %s\n",
