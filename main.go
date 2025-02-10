@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 23. 12. 2024 by Benjamin Walkenhorst
 // (c) 2024 Benjamin Walkenhorst
-// Time-stamp: <2025-01-20 16:21:55 krylon>
+// Time-stamp: <2025-02-10 19:54:09 krylon>
 
 package main
 
@@ -12,6 +12,7 @@ import (
 	"os"
 
 	"github.com/blicero/snoopy/common"
+	"github.com/blicero/snoopy/common/path"
 	"github.com/blicero/snoopy/ui"
 )
 
@@ -23,12 +24,14 @@ func main() {
 	defer fmt.Println("Bye Bye")
 
 	var (
-		err  error
-		base string
-		win  *ui.SWin
+		err   error
+		base  string
+		trunc bool
+		win   *ui.SWin
 	)
 
 	flag.StringVar(&base, "base", common.BaseDir, "Directory to store application-related files in")
+	flag.BoolVar(&trunc, "truncate", false, "Truncate the log file before starting")
 	flag.Parse()
 
 	if base != common.BaseDir {
@@ -36,6 +39,19 @@ func main() {
 			fmt.Fprintf(
 				os.Stderr,
 				"ERROR: %s\n",
+				err.Error(),
+			)
+			os.Exit(1)
+		}
+	}
+
+	if trunc {
+		var logfile = common.Path(path.Log)
+		if err = os.Truncate(logfile, 0); err != nil {
+			fmt.Fprintf(
+				os.Stderr,
+				"Failed to truncate log file %s: %s\n",
+				logfile,
 				err.Error(),
 			)
 			os.Exit(1)
