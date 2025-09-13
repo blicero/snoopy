@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-09-12 22:07:53 krylon>
+# Time-stamp: <2025-09-13 15:36:52 krylon>
 #
 # /data/code/python/snoopy/model.py
 # created on 12. 09. 2025
@@ -50,6 +50,7 @@ class File:
     """File is a file we may search for."""
 
     fid: int = 0
+    folder_id: int
     path: str
     mime_type: str = "application/octet-stream"
     stime: Optional[datetime] = None

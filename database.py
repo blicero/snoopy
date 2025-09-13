@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-09-13 14:46:49 krylon>
+# Time-stamp: <2025-09-13 15:49:59 krylon>
 #
 # /data/code/python/snoopy/database.py
 # created on 13. 09. 2025
@@ -26,7 +26,7 @@ from typing import Final, Optional
 import krylib
 
 from snoopy import common
-from snoopy.model import Folder
+from snoopy.model import File, Folder
 
 qinit: Final[list[str]] = [
     """
@@ -195,6 +195,72 @@ class Database:
             folders.append(f)
 
         return folders
+
+    def file_add(self, f: File) -> None:
+        """Add a File to the database."""
+        cur = self.db.cursor()
+        cur.execute(qdb[Query.FileAdd], (f.folder_id, f.path, f.mime_type, int(f.mtime.timestamp()), f.size))
+        row = cur.fetchone()
+        f.fid = row[0]
+
+    def file_update(self, f: File, stime: datetime, mtime: datetime, size: int, content: str) -> None:
+        """Update a File."""
+        cur = self.db.cursor()
+        cur.execute(qdb[Query.FileUpdate],
+                    (int(stime.timestamp()),
+                     int(mtime.timestamp()),
+                     size,
+                     content,
+                     f.fid))
+        f.stime = stime
+        f.mtime = mtime
+        f.size = size
+        f.content = content
+
+    def file_delete(self, f: File) -> None:
+        """Delete a File from the database."""
+        cur = self.db.cursor()
+        cur.execute(qdb[Query.FileDelete], (f.fid, ))
+
+    def file_get_by_root(self, fldr: Folder) -> list[File]:
+        """Get all Files from a particular Folder."""
+        cur = self.db.cursor()
+        cur.execute(qdb[Query.FileGetByRoot], (fldr.fid, ))
+
+        files: list[File] = []
+
+        for row in cur:
+            f = File(fid=row[0],
+                     folder_id=fldr.fid,
+                     path=row[1],
+                     mime_type=row[2],
+                     stime=datetime.fromtimestamp(row[3]),
+                     mtime=datetime.fromtimestamp(row[4]),
+                     size=row[5],
+                     content=row[6])
+            files.append(f)
+
+        return files
+
+    def file_get_by_path(self, path: str) -> Optional[File]:
+        """Get a File by its path."""
+        cur = self.db.cursor()
+        cur.execute(qdb[Query.FileGetByPath], (path, ))
+
+        row = cur.fetchone()
+        if row is None:
+            self.log.debug("File \"%s\" was not found in database.", path)
+            return None
+
+        f: File = File(fid=row[0],
+                       folder_id=row[1],
+                       path=path,
+                       mime_type=row[2],
+                       stime=datetime.fromtimestamp(row[3]),
+                       mtime=datetime.fromtimestamp(row[4]),
+                       size=row[5],
+                       content=row[6])
+        return f
 
 # Local Variables: #
 # python-indent: 4 #
