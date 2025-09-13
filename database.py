@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-09-13 15:49:59 krylon>
+# Time-stamp: <2025-09-13 16:31:23 krylon>
 #
 # /data/code/python/snoopy/database.py
 # created on 13. 09. 2025
@@ -44,7 +44,6 @@ CREATE TABLE file (
     path TEXT UNIQUE NOT NULL,
     mime_type TEXT NOT NULL,
     stime INTEGER NOT NULL DEFAULT 0,
-    mtime INTEGER NOT NULL DEFAULT 0,
     size INTEGER NOT NULL,
     content TEXT,
     CHECK (size >= 0),
@@ -84,12 +83,12 @@ SELECT
 FROM folder
     """,
     Query.FileAdd: """
-INSERT INTO file (folder_id, path, mime_type, mtime, size)
-          VALUES (        ?,    ?          ?,           ?)
+INSERT INTO file (folder_id, path, mime_type, size)
+          VALUES (        ?,    ?          ?,    ?)
 RETURNING id
     """,
     Query.FileUpdate: """
-UPDATE file SET stime = ?, mtime = ?, size = ?, content = ? WHERE id = ?
+UPDATE file SET stime = ?, size = ?, content = ? WHERE id = ?
     """,
     Query.FileDelete: "DELETE FROM file WHERE id = ?",
     Query.FileGetByRoot: """
@@ -98,7 +97,6 @@ SELECT
     path,
     mime_type,
     stime,
-    mtime,
     size,
     content
 FROM file WHERE folder_id = ?
@@ -110,7 +108,6 @@ SELECT
     folder_id
     mime_type,
     stime,
-    mtime,
     size,
     content
 FROM file WHERE path = ?
@@ -180,7 +177,7 @@ class Database:
     def folder_update_scan(self, f: Folder, stamp: datetime) -> None:
         """Update a Folder's last_scan timestamp."""
         cur = self.db.cursor()
-        cur.execute(int(stamp.timestamp()), f.fid)
+        cur.execute(qdb[Query.FolderUpdateScan], (int(stamp.timestamp()), f.fid))
         f.last_scan = stamp
 
     def folder_get_all(self) -> list[Folder]:
@@ -199,21 +196,26 @@ class Database:
     def file_add(self, f: File) -> None:
         """Add a File to the database."""
         cur = self.db.cursor()
-        cur.execute(qdb[Query.FileAdd], (f.folder_id, f.path, f.mime_type, int(f.mtime.timestamp()), f.size))
+        cur.execute(qdb[Query.FileAdd], (f.folder_id,
+                                         f.path,
+                                         f.mime_type,
+                                         f.size))
         row = cur.fetchone()
         f.fid = row[0]
 
-    def file_update(self, f: File, stime: datetime, mtime: datetime, size: int, content: str) -> None:
+    def file_update(self,
+                    f: File,
+                    stime: datetime,
+                    size: int,
+                    content: str) -> None:
         """Update a File."""
         cur = self.db.cursor()
         cur.execute(qdb[Query.FileUpdate],
                     (int(stime.timestamp()),
-                     int(mtime.timestamp()),
                      size,
                      content,
                      f.fid))
         f.stime = stime
-        f.mtime = mtime
         f.size = size
         f.content = content
 
@@ -235,7 +237,6 @@ class Database:
                      path=row[1],
                      mime_type=row[2],
                      stime=datetime.fromtimestamp(row[3]),
-                     mtime=datetime.fromtimestamp(row[4]),
                      size=row[5],
                      content=row[6])
             files.append(f)
@@ -257,7 +258,6 @@ class Database:
                        path=path,
                        mime_type=row[2],
                        stime=datetime.fromtimestamp(row[3]),
-                       mtime=datetime.fromtimestamp(row[4]),
                        size=row[5],
                        content=row[6])
         return f

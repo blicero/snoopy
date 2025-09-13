@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-09-13 15:36:52 krylon>
+# Time-stamp: <2025-09-13 16:31:12 krylon>
 #
 # /data/code/python/snoopy/model.py
 # created on 12. 09. 2025
@@ -37,9 +37,9 @@ class FileType(Enum):
 class Folder:
     """Folder is a directory we care about."""
 
-    fid: int
+    fid: int = 0
     path: str
-    last_scan: datetime
+    last_scan: datetime = field(default=datetime.fromtimestamp(0))
 
 
 suffix_pat: Final[re.Pattern] = re.compile(r"[.](\w+)$")
@@ -54,9 +54,7 @@ class File:
     path: str
     mime_type: str = "application/octet-stream"
     stime: Optional[datetime] = None
-    mtime: datetime = field(init=False)
     size: int
-    file_type: FileType
     content: str
 
     @property
