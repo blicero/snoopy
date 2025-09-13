@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-09-12 19:30:33 krylon>
+# Time-stamp: <2025-09-13 16:01:09 krylon>
 #
 # /data/code/python/snoopy/common.py
 # created on 12. 09. 2025
@@ -17,6 +17,7 @@ snoopy.common
 """
 
 import logging
+import logging.handlers
 import os
 import sys
 from threading import Lock
@@ -98,8 +99,8 @@ def init_app() -> None:
     if not os.path.isdir(path.base()):
         print(f"Create base directory {path.base()}")
         os.mkdir(path.base())
-    if not os.path.isdir(path.spool()):
-        os.mkdir(path.spool())
+    if not os.path.isdir(path.spool):
+        os.mkdir(path.spool)
 
 
 def get_logger(name: str, terminal: bool = True) -> logging.Logger:
@@ -117,7 +118,7 @@ def get_logger(name: str, terminal: bool = True) -> logging.Logger:
 
         log_obj = logging.getLogger(name)
         log_obj.setLevel(logging.DEBUG)
-        log_file_handler = logging.handlers.RotatingFileHandler(path.log(),
+        log_file_handler = logging.handlers.RotatingFileHandler(path.log,
                                                                 'a',
                                                                 max_log_size,
                                                                 max_log_count)
