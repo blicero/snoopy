@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-09-13 16:33:08 krylon>
+# Time-stamp: <2025-09-15 20:15:52 krylon>
 #
 # /data/code/python/snoopy/test_database.py
 # created on 13. 09. 2025
@@ -35,7 +35,7 @@ class TestDatabase(unittest.TestCase):
     """Test the database."""
 
     conn: Optional[Database] = None
-    folders: list[Folder] = []
+    _folders: list[Folder] = []
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -58,6 +58,14 @@ class TestDatabase(unittest.TestCase):
 
         raise ValueError("No Database connection exists")
 
+    @classmethod
+    def folders(cls, folders: Optional[list[Folder]] = None) -> list[Folder]:
+        """Set or return the list of Folders."""
+        if folders is not None:
+            cls._folders = folders
+
+        return cls._folders
+
     def test_01_db_open(self) -> None:
         """Attempt to open a fresh database."""
         db: Database = Database()
@@ -74,14 +82,14 @@ class TestDatabase(unittest.TestCase):
             os.environ["HOME"],
         ]
 
-        folders = [Folder(path=x) for x in pathnames]
+        self.folders([Folder(path=x) for x in pathnames])
 
         with db:
-            for f in folders:
+            for f in self.folders():
                 db.folder_add(f)
                 self.assertGreater(f.fid, 0)
 
-        self.folders = folders
+        # self.folders = folders
 
     def test_03_folder_update_scan(self) -> None:
         """Try updating the test folders' timestamps."""
@@ -89,10 +97,19 @@ class TestDatabase(unittest.TestCase):
         stamp: Final[datetime] = datetime.now()
 
         with db:
-            for f in self.folders:
+            for f in self.folders():
                 self.assertEqual(f.last_scan.timestamp(), 0.0)
                 db.folder_update_scan(f, stamp)
                 self.assertGreater(f.last_scan.timestamp(), 0.0)
+
+    def test_04_folder_get_all(self) -> None:
+        """Try fetching all folders from the database."""
+        db: Database = self.db()
+
+        with db:
+            folders: list[Folder] = db.folder_get_all()
+            self.assertIsNotNone(folders)
+            self.assertEqual(len(self.folders()), len(folders))
 
 # Local Variables: #
 # python-indent: 4 #
