@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-09-15 20:15:52 krylon>
+# Time-stamp: <2025-09-16 17:02:14 krylon>
 #
 # /data/code/python/snoopy/test_database.py
 # created on 13. 09. 2025
@@ -19,20 +19,21 @@ snoopy.test_database
 import os
 import shutil
 import unittest
+from abc import ABCMeta
 from datetime import datetime
 from typing import Final, Optional
 
 from snoopy import common
 from snoopy.database import Database
-from snoopy.model import Folder
+from snoopy.model import File, Folder
 
 test_dir: Final[str] = os.path.join(
     "/tmp",
     datetime.now().strftime("snoopy_test_database_%Y%m%d_%H%M%S"))
 
 
-class TestDatabase(unittest.TestCase):
-    """Test the database."""
+class TestDatabase(unittest.TestCase, metaclass=ABCMeta):
+    """Base class for testing the Database"""
 
     conn: Optional[Database] = None
     _folders: list[Folder] = []
@@ -72,6 +73,10 @@ class TestDatabase(unittest.TestCase):
         self.assertIsNotNone(db)
         self.db(db)
 
+
+class TestDatabaseFolders(TestDatabase):
+    """Test dealing with Folders."""
+
     def test_02_folder_add(self) -> None:
         """Try adding the odd folder or two."""
         db: Database = self.db()
@@ -110,6 +115,23 @@ class TestDatabase(unittest.TestCase):
             folders: list[Folder] = db.folder_get_all()
             self.assertIsNotNone(folders)
             self.assertEqual(len(self.folders()), len(folders))
+
+
+class TestDatabaseFiles(TestDatabase):
+    """Test dealing with Files."""
+
+    _files: list[File] = []
+
+    @classmethod
+    def files(cls, files: Optional[list[File]] = None) -> list[File]:
+        """Get or set the list of Files."""
+        if files is not None:
+            cls._files = files
+
+        return cls._files
+
+    def test_02_file_add(self) -> None:
+        """Try adding some Files."""
 
 # Local Variables: #
 # python-indent: 4 #
