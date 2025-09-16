@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2025-09-15 20:27:18 krylon>
+# Time-stamp: <2025-09-16 22:23:30 krylon>
 #
 #+TAGS: internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -15,14 +15,14 @@
   :END:
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 255 :emphasize t
-   #+CAPTION: Clock summary at [2025-09-15 Mo 20:27]
+   #+CAPTION: Clock summary at [2025-09-16 Di 22:23]
    | Headline               | Time   |        |      |
    |------------------------+--------+--------+------|
-   | *Total time*           | *2:37* |        |      |
+   | *Total time*           | *8:11* |        |      |
    |------------------------+--------+--------+------|
-   | *Snoopy [0/0]*         | *2:37* |        |      |
-   | \_  /Components [0/0]/ |        | /2:37/ |      |
-   | \_    Database [0/0]   |        |        | 2:37 |
+   | *Snoopy [0/0]*         | *8:11* |        |      |
+   | \_  /Components [0/0]/ |        | /8:11/ |      |
+   | \_    Database [0/0]   |        |        | 8:11 |
    #+END:
 ** Features [0/0]
    :PROPERTIES:
@@ -45,6 +45,7 @@
     :VISIBILITY: children
     :END:
     :LOGBOOK:
+    CLOCK: [2025-09-16 Di 16:49]--[2025-09-16 Di 22:23] =>  5:34
     CLOCK: [2025-09-15 Mo 19:45]--[2025-09-15 Mo 20:27] =>  0:42
     CLOCK: [2025-09-13 Sa 15:50]--[2025-09-13 Sa 16:38] =>  0:48
     CLOCK: [2025-09-13 Sa 15:25]--[2025-09-13 Sa 15:50] =>  0:25
